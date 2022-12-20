@@ -37,13 +37,22 @@ class Transaction {
 }
 
 class Wallet {
-  constructor() {
+  constructor(owner) {
+    // Private Key is a 64 digit hex randomly created
+    // Public key is a hash of the private key
+    // ( using elliptic curve )
+
+    // Public address comes from hashing the public key
+    // the address is a 27 to 34 digit alpha numeric value
+
+    // Using the CoinKey library to construct these
     const coinkey = new CoinKey.createRandom();
+    this.owner = owner; // actual blockchain does not have this (for illustration purposes)
     this.keys = coinkey;
     this.addresss = coinkey.publicAddress.toString("hex");
   }
   displayWalletInfo() {
-    console.log("Wallet Information");
+    console.log(`${this.owner}'s wallet Information`);
     console.log("# ----------------# ");
     console.log("Private Key: ", this.keys.privateKey.toString("hex"));
     console.log("Public Key: ", this.keys.publicKey.toString("hex"));
@@ -60,12 +69,10 @@ class Wallet {
 }
 
 const main = async function () {
-  const myWallet = new Wallet();
-  const davesWallet = new Wallet();
+  const myWallet = new Wallet("Robert");
+  const davesWallet = new Wallet("Dave");
 
-  console.log("My Wallet: ");
   myWallet.displayWalletInfo();
-  console.log("Dave's Wallet: ");
   davesWallet.displayWalletInfo();
 
   // I send 0.1 BTC to Dave
