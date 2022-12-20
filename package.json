@@ -1,0 +1,17 @@
+{
+  "name": "blockchain",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "coinkey": "^3.0.0",
+    "eccrypto": "^1.1.6",
+    "secp256k1": "^4.0.3",
+    "sjcl": "^1.0.8"
+  }
+}
