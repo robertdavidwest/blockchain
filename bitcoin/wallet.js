@@ -1,7 +1,7 @@
 const CoinKey = require("coinkey");
 const { strPreview } = require("./helpers");
-const Transaction = require("./transaction");
-const { TX_POOL, getAmtPerAddress } = require("./blockchain");
+const createTransaction = require("./transaction");
+const { getAmtPerAddress } = require("./blockchain");
 
 class Wallet {
   constructor(owner, initBalance) {
@@ -21,16 +21,6 @@ class Wallet {
 
     // create a transaction to initialize your wallet and put it in the TX_POOL
     this._createInitTransaction("exchange", this.address, initBalance);
-
-    // irl the "balance" is calculated on every
-    // transaction by feeding in all prior transactions (or hashes of them)
-    // so we will generate a fake transaction with the initBalance to kick things off
-    // this.balance = 0;
-    // this.transactionRecords = [];
-    // if (initBalance) {
-    // this.transactionRecords.push(initBalance);
-    // this.updateBalance();
-    // }
   }
   checkBalance() {
     this.balance =
@@ -44,7 +34,6 @@ class Wallet {
   displayWalletInfo() {
     console.log(`${this.owner}'s wallet Information`);
     console.log("# ----------------# ");
-    // console.log("Balance : ", this.balance);
     console.log("Private Key: ", this.keys.privateKey.toString("hex"));
     console.log("Public Key: ", this.keys.publicKey.toString("hex"));
     console.log("Public Address: ", this.address);
@@ -56,9 +45,8 @@ class Wallet {
     console.log("");
   }
   async _createInitTransaction(fromAddress, toAddress, amount) {
-    const transaction = new Transaction(fromAddress, toAddress, amount);
-    await transaction.addSignature(this.keys.privateKey);
-    TX_POOL.push(transaction);
+    const pk = this.keys.privateKey;
+    await createTransaction(pk, fromAddress, toAddress, amount);
   }
   async createTransaction(toAddress, amount) {
     const fromShort = strPreview(this.address);
@@ -72,9 +60,8 @@ class Wallet {
     const balance = this.getBalance();
     if (amount < balance) {
       const fromAddress = this.address;
-      const transaction = new Transaction(fromAddress, toAddress, amount);
-      await transaction.addSignature(this.keys.privateKey);
-      TX_POOL.push(transaction);
+      const pk = this.keys.privateKey;
+      await createTransaction(pk, fromAddress, toAddress, amount);
       console.log("Transaction Successful and sent to TX_POOL");
       return 1;
     } else {

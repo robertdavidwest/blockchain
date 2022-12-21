@@ -1,5 +1,6 @@
 const eccrypto = require("eccrypto");
 const { hashObject } = require("./helpers");
+const { TX_POOL } = require("./blockchain");
 
 function getGas() {
   // will figure this out later
@@ -11,6 +12,13 @@ function getGas() {
   // if gas is below a certain minimum it may never get picked up
   // (since there would always be better options for the minors)
   return 0.05;
+}
+
+async function createTransaction(privateKey, fromAddress, toAddress, amount) {
+  // need to addSignature when ever new Transaction is created
+  const transaction = new Transaction(fromAddress, toAddress, amount);
+  TX_POOL.push(transaction);
+  await transaction.addSignature(privateKey);
 }
 
 class Transaction {
@@ -42,4 +50,4 @@ class Transaction {
   }
 }
 
-module.exports = Transaction;
+module.exports = createTransaction;
