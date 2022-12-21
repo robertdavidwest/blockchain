@@ -44,5 +44,5 @@ const main = async function (secsPerDisplay) {
   }, secsPerDisplay * 1000);
 };
 
-createBlockFromTxPool(11); // every 10 seconds process transactions
+createBlockFromTxPool(11); // every 11 seconds process transactions
 main(10); // every 5 seconds display data
