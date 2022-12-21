@@ -3,7 +3,7 @@ const eccrypto = require("eccrypto");
 const Block = require("./block");
 const { hashObject, strPreview } = require("./helpers");
 
-// holds transactions before they are on the block chain
+// TX_POOL holds transactions before they are on the block chain
 const TX_POOL = [];
 const BLOCK_CHAIN = [];
 
