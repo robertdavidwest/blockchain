@@ -19,18 +19,18 @@ function getAmtPerAddress(transactionType, walletAddress) {
   }, 0);
 }
 
+function getLastBlockHash() {
+  if (!BLOCK_CHAIN.length) return null;
+  return hashObject(BLOCK_CHAIN[BLOCK_CHAIN.length - 1]).toString("hex");
+}
+
 function createBlockFromTxPool(secondsPerBlock) {
   setInterval(function () {
     if (TX_POOL.length) {
+      // For simplcity I am having each block
+      // contain just a single transaction for now
       const tx = TX_POOL.shift();
-      let previousBlockHash;
-      if (BLOCK_CHAIN.length) {
-        previousBlockHash = hashObject(
-          BLOCK_CHAIN[BLOCK_CHAIN.length - 1]
-        ).toString("hex");
-      } else {
-        previousBlockHash = null;
-      }
+      const previousBlockHash = getLastBlockHash();
       const block = new Block([tx], previousBlockHash);
       BLOCK_CHAIN.push(block);
     }

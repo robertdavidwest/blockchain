@@ -4,8 +4,6 @@ const SHA256 = require("crypto-js/sha256");
 const MAGIC_NUMBER = 123;
 const BLOCK_VERSION = "1.0.0";
 
-// For simplcity I am having each block
-// contain just a single transaction
 class Block {
   constructor(transactions, previousBlockHash) {
     // identifies the bitcoin blockchain
