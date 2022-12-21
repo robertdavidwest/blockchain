@@ -1,6 +1,68 @@
 const CoinKey = require("coinkey");
 const crypto = require("crypto");
 var eccrypto = require("eccrypto");
+const Block = require("./bitcoin/block");
+const {
+  TX_POOL,
+  BLOCK_CHAIN,
+  getAmtPerAddress,
+} = require("./bitcoin/blockchain");
+
+function strPreview(s) {
+  if (s) return `${s.slice(0, 8)}...`;
+  else return s;
+}
+
+function createBlocks() {
+  setInterval(function () {
+    if (TX_POOL.length) {
+      const tx = TX_POOL.shift();
+      let previousBlockHash;
+      if (BLOCK_CHAIN.length) {
+        previousBlockHash = hashObj(
+          BLOCK_CHAIN[BLOCK_CHAIN.length - 1]
+        ).toString("hex");
+      } else {
+        previousBlockHash = null;
+      }
+      const block = new Block([tx], previousBlockHash);
+      BLOCK_CHAIN.push(block);
+    }
+  }, 10000);
+}
+createBlocks();
+
+function displayTxPool() {
+  console.log("");
+  console.log("TX Pool:");
+  TX_POOL.map((x, i) => {
+    console.log(
+      i,
+      strPreview(x.fromAddress),
+      "->",
+      strPreview(x.toAddress),
+      "; Amt: ",
+      x.amount
+    );
+  });
+}
+
+function displayBlockChain() {
+  console.log("");
+  console.log("Block Chain:");
+  if (!BLOCK_CHAIN.length) console.log("empty");
+  BLOCK_CHAIN.map((x, i) => {
+    console.log(
+      "Block ",
+      i,
+      " : hashMerkleRoot: ",
+      strPreview(x.hashMerkleRoot),
+      "; previousBlockHash: ",
+      strPreview(x.previousBlockHash)
+    );
+  });
+  console.log("");
+}
 
 function hashObj(obj) {
   var msg = crypto
@@ -12,6 +74,13 @@ function hashObj(obj) {
 
 function getGas() {
   // will figure this out later
+  // Minors will pick up transactions from the pool
+  // that have the highest transaction fee. So adding
+  // more gas to a transaction helps to prioritize it and
+  // get it processes quicker
+
+  // if gas is below a certain minimum it may never get picked up
+  // (since there would always be better options for the minors)
   return 0.05;
 }
 
@@ -27,8 +96,16 @@ class Transaction {
 
     // create a hash of all transacton data
     this.txHash = hashObj(transactionObj);
+    // transactionObj should include signature too
+    // leaving out for now cause async
+
     this.timestamp = new Date(Date.now());
     this.signature = null;
+
+    // note for etherium transaction you would also include:
+    // "nonce" - starts at 0 and increments each transaction
+    // and
+    // "data" - could be a smart contract or inputs to call another smart contract
   }
   // signature is calculated outside of constructor because it is async
   async addSignature(privateKey) {
@@ -37,7 +114,7 @@ class Transaction {
 }
 
 class Wallet {
-  constructor(owner) {
+  constructor(owner, initBalance) {
     // Private Key is a 64 digit hex randomly created
     // Public key is a hash of the private key
     // ( using elliptic curve )
@@ -49,56 +126,128 @@ class Wallet {
     const coinkey = new CoinKey.createRandom();
     this.owner = owner; // actual blockchain does not have this (for illustration purposes)
     this.keys = coinkey;
-    this.addresss = coinkey.publicAddress.toString("hex");
+    this.address = coinkey.publicAddress.toString("hex");
+    this.balance = 0;
+    // create a transaction to initialize your wallet and put it in the TX_POOL
+    const transaction = new Transaction("exchange", this.address, initBalance);
+    TX_POOL.push(transaction);
+    // irl the "balance" is calculated on every
+    // transaction by feeding in all prior transactions (or hashes of them)
+    // so we will generate a fake transaction with the initBalance to kick things off
+    // this.balance = 0;
+    // this.transactionRecords = [];
+    // if (initBalance) {
+    // this.transactionRecords.push(initBalance);
+    // this.updateBalance();
+    // }
+  }
+  checkBalance() {
+    this.balance =
+      getAmtPerAddress("received", this.address) -
+      getAmtPerAddress("sent", this.address);
+  }
+  getBalance() {
+    this.checkBalance();
+    return this.balance;
   }
   displayWalletInfo() {
     console.log(`${this.owner}'s wallet Information`);
     console.log("# ----------------# ");
+    // console.log("Balance : ", this.balance);
     console.log("Private Key: ", this.keys.privateKey.toString("hex"));
     console.log("Public Key: ", this.keys.publicKey.toString("hex"));
-    console.log("Public Address: ", this.addresss);
+    console.log("Public Address: ", this.address);
+    console.log("Balance: ", this.getBalance());
     console.log("");
   }
+  displayBalance() {
+    console.log(`${this.owner}'s wallet Balance: ${this.getBalance()}`);
+    console.log("");
+  }
+
   async createTransaction(toAddress, amount) {
-    const fromAddress = this.addresss;
-    const gas = getGas();
-    const transaction = new Transaction(fromAddress, toAddress, amount);
-    await transaction.addSignature(this.keys.privateKey);
-    return transaction;
+    const fromShort = strPreview(this.address);
+    const toShort = strPreview(toAddress);
+
+    console.log(
+      `Transaction request of ${amount} BTC from ${fromShort} to ${toShort} `
+    );
+    console.log("Attempting transaction...");
+
+    const balance = this.getBalance();
+    if (amount < balance) {
+      const fromAddress = this.address;
+      const transaction = new Transaction(fromAddress, toAddress, amount);
+      await transaction.addSignature(this.keys.privateKey);
+      TX_POOL.push(transaction);
+      console.log("Transaction Successful and sent to TX_POOL");
+      return 1;
+    } else {
+      console.log(
+        `Unable to send. Not enough BTC in wallet. Balance: ${balance}`
+      );
+      return 0;
+    }
   }
 }
 
 const main = async function () {
-  const myWallet = new Wallet("Robert");
-  const davesWallet = new Wallet("Dave");
-
+  console.log("# ------------------------------");
+  console.log(`Info at: ${new Date(Date.now())}`);
+  console.log("");
+  const myWallet = new Wallet("Robert", 1.0);
+  const davesWallet = new Wallet("Dave", 1.0);
   myWallet.displayWalletInfo();
   davesWallet.displayWalletInfo();
+  myWallet.createTransaction(davesWallet.address, 0.1);
+  console.log("");
+  console.log("");
+  console.log("");
+  let success = 0;
+  const interval = setInterval(async function () {
+    console.log(`Info at: ${new Date(Date.now())}`);
+    displayTxPool();
+    displayBlockChain();
+    myWallet.displayBalance();
+    davesWallet.displayBalance();
+    console.log("");
+    if (!success) {
+      success = await myWallet.createTransaction(davesWallet.address, 0.1);
+    } else {
+      clearInterval(interval);
+    }
+    console.log("");
+    console.log("");
+    console.log("");
+  }, 5000);
 
   // I send 0.1 BTC to Dave
-  console.log("I am sending 0.1 BTC to Dave");
-  console.log("");
-  const transaction = await myWallet.createTransaction(
-    davesWallet.addresss,
-    0.1
-  );
+  // console.log("I am sending 0.1 BTC to Dave");
+  // console.log("");
+  // const transaction = await myWallet.(
+  // davesWallet.address,
+  // 0.1
+  // );
+  /*
 
   console.log(
     "My Transaction Signature:",
     transaction.signature.toString("hex")
   );
-
-  // verify signature on transaction
   console.log("My transaction signature can be verified using my public key:");
   console.log("");
+
   eccrypto
     .verify(myWallet.keys.publicKey, transaction.txHash, transaction.signature)
     .then(function () {
       console.log("Signature is OK");
+
+      console.log(myWallet.displayWalletInfo());
     })
     .catch(function () {
       console.log("Signature is BAD");
     });
+    */
 };
 
 main();
