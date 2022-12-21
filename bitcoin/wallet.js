@@ -50,7 +50,6 @@ class Wallet {
   }
   displayBalance() {
     console.log(`${this.owner}'s wallet Balance: ${this.getBalance()}`);
-    console.log("");
   }
   async _createInitTransaction(pk, verifyKey, fromAddress, toAddress, amount) {
     await createTransaction(pk, verifyKey, fromAddress, toAddress, amount);

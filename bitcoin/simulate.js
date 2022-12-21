@@ -5,39 +5,44 @@ const {
 } = require("./blockchain");
 const Wallet = require("./wallet");
 
-const main = async function (secsPerDisplay) {
-  console.log("# ------------------------------");
+function displayInitial(wallet1, wallet2) {
+  console.log("#---------------------------------------------------------");
+  console.log("#---------------------------------------------------------");
   console.log(`Info at: ${new Date(Date.now())}`);
   console.log("");
+  wallet1.displayWalletInfo();
+  wallet2.displayWalletInfo();
+}
+
+function displayBlockchainInfo(wallet1, wallet2) {
+  console.log("#---------------------------------------------------------");
+  console.log("#---------------------------------------------------------");
+  console.log(`Info at: ${new Date(Date.now())}`);
+  displayTxPool();
+  displayBlockChain();
+  wallet1.displayBalance();
+  wallet2.displayBalance();
+  console.log("");
+}
+
+const main = async function (secsPerDisplay) {
   const myWallet = new Wallet("Robert", 1.0);
   const davesWallet = new Wallet("Dave", 1.0);
-  myWallet.displayWalletInfo();
-  davesWallet.displayWalletInfo();
-  myWallet.createTransaction(davesWallet.address, 0.1);
-  console.log("");
-  console.log("");
-  console.log("");
-  let success = 0;
+  displayInitial(myWallet, davesWallet);
+
   const myExpectedFinalBalance = 0.9;
+  let success = await myWallet.createTransaction(davesWallet.address, 0.1);
 
   const interval = setInterval(async function () {
-    console.log(`Info at: ${new Date(Date.now())}`);
-    displayTxPool();
-    displayBlockChain();
-    myWallet.displayBalance();
-    davesWallet.displayBalance();
-    console.log("");
+    displayBlockchainInfo(myWallet, davesWallet);
     if (!success) {
       success = await myWallet.createTransaction(davesWallet.address, 0.1);
     }
     if (myWallet.getBalance() === myExpectedFinalBalance) {
       clearInterval(interval);
     }
-    console.log("");
-    console.log("");
-    console.log("");
   }, secsPerDisplay * 1000);
 };
 
-createBlockFromTxPool(10); // every 10 seconds process transactions
-main(5); // every 5 seconds display data
+createBlockFromTxPool(11); // every 10 seconds process transactions
+main(10); // every 5 seconds display data
