@@ -28,6 +28,30 @@ class Block {
       SHA256
     );
     this.hashMerkleRoot = tree.getRoot().toString("hex");
+
+    this.timestamp = new Date(Date.now());
+
+    // the difficulty rating of the block
+    // more bits, difficulty of blockchain increases
+    // making it more difficult to mine the block
+    this.bits = null; // needs to be added
+
+    // determined by minors
+    // Added to the end of the Block by a Minor as their proof
+    // as a valid block
+    // (and that a certain amt of work has been done to validate this block)
+    this.nonse = null; // needs to be implemented
+
+    // blockReward - how much bitcoin will be given to the minor
+    // that successfully mines the block
+    // typically decreases as the network gets older
+    // (this is the case with bitcoin)
+    this.blockReward = null;
+    // Bitcoin:
+    // first block created has a reward of 50 BTC
+    // by 2012 reward was halved to 25 BTC
+    // 2016 halved again 12.5 BTC
+    // 2020 halved 6.25 BTC
   }
 }
 
