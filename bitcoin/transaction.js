@@ -15,22 +15,11 @@ function getGas() {
   return 0.05;
 }
 
-async function createTransaction(
-  privateKey,
-  verifyKey,
-  fromAddress,
-  toAddress,
-  amount
-) {
-  // need to addSignature when ever new Transaction is created
-  const transaction = new Transaction(
-    verifyKey,
-    fromAddress,
-    toAddress,
-    amount
-  );
+async function createTransaction(pk, vk, fromAddress, toAddress, amount) {
+  const transaction = new Transaction(vk, fromAddress, toAddress, amount);
   TX_POOL.push(transaction);
-  await transaction.addSignature(privateKey);
+  // need to addSignature when ever new Transaction is created
+  await transaction.addSignature(pk);
 }
 
 class Transaction {
@@ -47,10 +36,9 @@ class Transaction {
 
     // create a hash of all transacton data
     this.txHash = hashObject(transactionObj);
-    // transactionObj should include signature too
-    // leaving out for now cause async
-
     this.timestamp = new Date(Date.now());
+
+    // signature is calculated outside of constructor because it is async
     this.signature = null;
 
     // note for etherium transaction you would also include:
@@ -58,7 +46,6 @@ class Transaction {
     // and
     // "data" - could be a smart contract or inputs to call another smart contract
   }
-  // signature is calculated outside of constructor because it is async
   async addSignature(privateKey) {
     this.signature = await eccrypto.sign(privateKey, this.txHash);
   }
