@@ -22,7 +22,7 @@ Core concepts included so far are:
 ### Transaction Pool (TX Pool)
 
 - The transaction pool is represented crudely to begin with as a simple queue (no gas fees incorporated yet)
-- A simple agnostic setInterval runs to check the pool periodically.
+- A simple indiscriminate setInterval runs to check the pool periodically.
 - The signature of each transaction is verified
 - A block is created from the transactions
 - For simplicity to begin with, a block is produced from a single transaction

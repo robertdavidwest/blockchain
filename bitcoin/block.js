@@ -36,6 +36,7 @@ class Block {
     // making it more difficult to mine the block
     this.bits = null; // needs to be added
 
+    // Nonse - a special number
     // determined by minors
     // Added to the end of the Block by a Minor as their proof
     // as a valid block
@@ -55,4 +56,30 @@ class Block {
   }
 }
 
-module.exports = Block;
+// Here is a the Genesis Block. This is just conceptual information at this stage
+// Its not used in the simulation yet
+class GenesisBlock extends Block {
+  // Has additional properties beyond a block:
+
+  // - Difficulty and difficulty interval for the blockchain:
+  // ( defines how the difficulty is increasing or decreasing as blocks are added )
+
+  // - Reward for mining:
+  // every time somone is "rewarded" with bitcoin. This is new coin. It is created at this
+  // point (you increase the supply)
+  // eventually the reward can reach zero and the minors will only
+  // be incentivized by picking up the transactions fees associated with a block
+
+  // - Circulating Supply:
+  // There is a given "circulating supply" of coins at any given time (or qty of blocks)
+  // max possible "circlulating supply" of Bitcoin will be 21 million
+  // Before any blocks were mined there was 0 BTC in circulation
+  // Satoshi mined the first block and mined many subsequent blocks
+  // bringing 50 BTC into supply
+
+  constructor(transactions) {
+    super(transactions, null);
+    this.blockReward = 50;
+  }
+}
+module.exports = { Block, GenesisBlock };

@@ -1,6 +1,6 @@
 const eccrypto = require("eccrypto");
 
-const Block = require("./block");
+const { Block } = require("./block");
 const { hashObject, strPreview } = require("./helpers");
 
 // TX_POOL holds transactions before they are on the block chain
