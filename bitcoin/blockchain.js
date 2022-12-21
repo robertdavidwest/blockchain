@@ -1,3 +1,5 @@
+const eccrypto = require("eccrypto");
+
 const Block = require("./block");
 const { hashObject, strPreview } = require("./helpers");
 
@@ -24,29 +26,31 @@ function getLastBlockHash() {
   return hashObject(BLOCK_CHAIN[BLOCK_CHAIN.length - 1]).toString("hex");
 }
 
-function validateSignature(tx) {
-  // this is not working now. But the idea still holds for what would be done
-  const eccrypto = require("eccrypto");
-  eccrypto
-    .verify(tx.verifyKey, tx.txHash, tx.signature)
-    .then(function () {
-      console.log(`Signature verified for tx, fromAdd: ${tx.fromAddress}`);
-    })
-    .catch(function () {
-      console.log(`Signature is Bad for tx, fromAdd: ${tx.fromAddress}`);
-    });
+async function validateSignature(tx) {
+  try {
+    await eccrypto.verify(tx.verifyKey, tx.txHash, tx.signature);
+    return 1;
+  } catch (error) {
+    return 0;
+  }
 }
 
 function createBlockFromTxPool(secondsPerBlock) {
-  setInterval(function () {
+  setInterval(async function () {
     if (TX_POOL.length) {
       // For simplcity I am having each block
       // contain just a single transaction for now
       const tx = TX_POOL.shift();
-      validateSignature(tx);
-      const previousBlockHash = getLastBlockHash();
-      const block = new Block([tx], previousBlockHash);
-      BLOCK_CHAIN.push(block);
+      const isOk = await validateSignature(tx);
+      if (isOk) {
+        const previousBlockHash = getLastBlockHash();
+        const block = new Block([tx], previousBlockHash);
+        BLOCK_CHAIN.push(block);
+      } else {
+        console.log(
+          `Tx not processed. Signature was bad for tx with txHash ${tx.txHash}`
+        );
+      }
     }
   }, secondsPerBlock * 1000);
 }
