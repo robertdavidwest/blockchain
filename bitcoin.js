@@ -1,76 +1,17 @@
 const CoinKey = require("coinkey");
-const crypto = require("crypto");
 var eccrypto = require("eccrypto");
-const Block = require("./bitcoin/block");
+const { hashObject, strPreview } = require("./bitcoin/helpers");
+
 const {
   TX_POOL,
   BLOCK_CHAIN,
+  createBlockFromTxPool,
   getAmtPerAddress,
+  displayTxPool,
+  displayBlockChain,
 } = require("./bitcoin/blockchain");
 
-function strPreview(s) {
-  if (s) return `${s.slice(0, 8)}...`;
-  else return s;
-}
-
-function createBlocks() {
-  setInterval(function () {
-    if (TX_POOL.length) {
-      const tx = TX_POOL.shift();
-      let previousBlockHash;
-      if (BLOCK_CHAIN.length) {
-        previousBlockHash = hashObj(
-          BLOCK_CHAIN[BLOCK_CHAIN.length - 1]
-        ).toString("hex");
-      } else {
-        previousBlockHash = null;
-      }
-      const block = new Block([tx], previousBlockHash);
-      BLOCK_CHAIN.push(block);
-    }
-  }, 10000);
-}
-createBlocks();
-
-function displayTxPool() {
-  console.log("");
-  console.log("TX Pool:");
-  TX_POOL.map((x, i) => {
-    console.log(
-      i,
-      strPreview(x.fromAddress),
-      "->",
-      strPreview(x.toAddress),
-      "; Amt: ",
-      x.amount
-    );
-  });
-}
-
-function displayBlockChain() {
-  console.log("");
-  console.log("Block Chain:");
-  if (!BLOCK_CHAIN.length) console.log("empty");
-  BLOCK_CHAIN.map((x, i) => {
-    console.log(
-      "Block ",
-      i,
-      " : hashMerkleRoot: ",
-      strPreview(x.hashMerkleRoot),
-      "; previousBlockHash: ",
-      strPreview(x.previousBlockHash)
-    );
-  });
-  console.log("");
-}
-
-function hashObj(obj) {
-  var msg = crypto
-    .createHash("sha256")
-    .update(Buffer.from(JSON.stringify(obj)))
-    .digest();
-  return msg;
-}
+createBlockFromTxPool(10); // every 10 seconds
 
 function getGas() {
   // will figure this out later
@@ -95,7 +36,7 @@ class Transaction {
     const transactionObj = { fromAddress, toAddress, amount, gas };
 
     // create a hash of all transacton data
-    this.txHash = hashObj(transactionObj);
+    this.txHash = hashObject(transactionObj);
     // transactionObj should include signature too
     // leaving out for now cause async
 
@@ -204,6 +145,8 @@ const main = async function () {
   console.log("");
   console.log("");
   let success = 0;
+  const myExpectedFinalBalance = 0.9;
+
   const interval = setInterval(async function () {
     console.log(`Info at: ${new Date(Date.now())}`);
     displayTxPool();
@@ -213,7 +156,8 @@ const main = async function () {
     console.log("");
     if (!success) {
       success = await myWallet.createTransaction(davesWallet.address, 0.1);
-    } else {
+    }
+    if (myWallet.getBalance() === myExpectedFinalBalance) {
       clearInterval(interval);
     }
     console.log("");
