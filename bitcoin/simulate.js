@@ -2,8 +2,8 @@ const {
   createBlockFromTxPool,
   displayTxPool,
   displayBlockChain,
-} = require("./bitcoin/blockchain");
-const Wallet = require("./bitcoin/wallet");
+} = require("./blockchain");
+const Wallet = require("./wallet");
 
 const main = async function () {
   console.log("# ------------------------------");
