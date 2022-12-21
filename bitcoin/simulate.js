@@ -25,7 +25,9 @@ function displayBlockchainInfo(wallet1, wallet2) {
   console.log("");
 }
 
-const main = async function (secsPerDisplay) {
+const main = async function () {
+  const secondsPerDisplay = 10;
+  const secondsPerMine = 11;
   const myWallet = new Wallet("Robert", 1.0);
   const davesWallet = new Wallet("Dave", 1.0);
   displayInitial(myWallet, davesWallet);
@@ -33,16 +35,19 @@ const main = async function (secsPerDisplay) {
   const myExpectedFinalBalance = 0.9;
   let success = await myWallet.createTransaction(davesWallet.address, 0.1);
 
-  const interval = setInterval(async function () {
+  const minorSimId = createBlockFromTxPool(secondsPerMine);
+  const displayLoopId = setInterval(async function () {
     displayBlockchainInfo(myWallet, davesWallet);
     if (!success) {
       success = await myWallet.createTransaction(davesWallet.address, 0.1);
     }
     if (myWallet.getBalance() === myExpectedFinalBalance) {
-      clearInterval(interval);
+      clearInterval(displayLoopId);
+      clearInterval(minorSimId);
     }
-  }, secsPerDisplay * 1000);
+  }, secondsPerDisplay * 1000);
 };
 
-createBlockFromTxPool(11); // every 11 seconds process transactions
-main(10); // every 10 seconds display data
+if (require.main === module) {
+  main();
+}

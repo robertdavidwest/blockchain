@@ -36,7 +36,7 @@ async function validateSignature(tx) {
 }
 
 function createBlockFromTxPool(secondsPerBlock) {
-  setInterval(async function () {
+  return setInterval(async function () {
     if (TX_POOL.length) {
       // For simplcity I am having each block
       // contain just a single transaction for now
