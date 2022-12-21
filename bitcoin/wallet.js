@@ -20,7 +20,13 @@ class Wallet {
     this.balance = 0;
 
     // create a transaction to initialize your wallet and put it in the TX_POOL
-    this._createInitTransaction("exchange", this.address, initBalance);
+    // (simulation of purchasing BTC from exchange or elsewhere)
+    const exchangeCoinkey = new CoinKey.createRandom();
+    this._createInitTransaction(
+      exchangeCoinkey.privateKey,
+      this.address,
+      initBalance
+    );
   }
   checkBalance() {
     this.balance =

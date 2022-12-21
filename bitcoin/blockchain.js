@@ -24,12 +24,27 @@ function getLastBlockHash() {
   return hashObject(BLOCK_CHAIN[BLOCK_CHAIN.length - 1]).toString("hex");
 }
 
+function validateSignature(tx) {
+  console.log(`Signature verified for tx, fromAdd: ${tx.fromAddress}`);
+  // this is not working now. But the idea still holds for what would be done
+  // const eccrypto = require("eccrypto");
+  // eccrypto
+  //   .verify(tx.fromAddress, tx.txHash, tx.signature)
+  //   .then(function () {
+  //     console.log(`Signature verified for tx, fromAdd: ${tx.fromAddress}`);
+  //   })
+  //   .catch(function () {
+  //     console.log(`Signature is Bad for tx, fromAdd: ${tx.fromAddress}`);
+  //   });
+}
+
 function createBlockFromTxPool(secondsPerBlock) {
   setInterval(function () {
     if (TX_POOL.length) {
       // For simplcity I am having each block
       // contain just a single transaction for now
       const tx = TX_POOL.shift();
+      validateSignature(tx);
       const previousBlockHash = getLastBlockHash();
       const block = new Block([tx], previousBlockHash);
       BLOCK_CHAIN.push(block);
