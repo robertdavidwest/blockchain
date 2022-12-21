@@ -24,6 +24,8 @@ class Wallet {
     const exchangeCoinkey = new CoinKey.createRandom();
     this._createInitTransaction(
       exchangeCoinkey.privateKey,
+      exchangeCoinkey.publicKey,
+      exchangeCoinkey.publicAddress,
       this.address,
       initBalance
     );
@@ -50,9 +52,8 @@ class Wallet {
     console.log(`${this.owner}'s wallet Balance: ${this.getBalance()}`);
     console.log("");
   }
-  async _createInitTransaction(fromAddress, toAddress, amount) {
-    const pk = this.keys.privateKey;
-    await createTransaction(pk, fromAddress, toAddress, amount);
+  async _createInitTransaction(pk, verifyKey, fromAddress, toAddress, amount) {
+    await createTransaction(pk, verifyKey, fromAddress, toAddress, amount);
   }
   async createTransaction(toAddress, amount) {
     const fromShort = strPreview(this.address);
@@ -67,7 +68,8 @@ class Wallet {
     if (amount < balance) {
       const fromAddress = this.address;
       const pk = this.keys.privateKey;
-      await createTransaction(pk, fromAddress, toAddress, amount);
+      const verifyKey = this.keys.publicKey;
+      await createTransaction(pk, verifyKey, fromAddress, toAddress, amount);
       console.log("Transaction Successful and sent to TX_POOL");
       return 1;
     } else {

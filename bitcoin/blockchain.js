@@ -25,17 +25,16 @@ function getLastBlockHash() {
 }
 
 function validateSignature(tx) {
-  console.log(`Signature verified for tx, fromAdd: ${tx.fromAddress}`);
   // this is not working now. But the idea still holds for what would be done
-  // const eccrypto = require("eccrypto");
-  // eccrypto
-  //   .verify(tx.fromAddress, tx.txHash, tx.signature)
-  //   .then(function () {
-  //     console.log(`Signature verified for tx, fromAdd: ${tx.fromAddress}`);
-  //   })
-  //   .catch(function () {
-  //     console.log(`Signature is Bad for tx, fromAdd: ${tx.fromAddress}`);
-  //   });
+  const eccrypto = require("eccrypto");
+  eccrypto
+    .verify(tx.verifyKey, tx.txHash, tx.signature)
+    .then(function () {
+      console.log(`Signature verified for tx, fromAdd: ${tx.fromAddress}`);
+    })
+    .catch(function () {
+      console.log(`Signature is Bad for tx, fromAdd: ${tx.fromAddress}`);
+    });
 }
 
 function createBlockFromTxPool(secondsPerBlock) {

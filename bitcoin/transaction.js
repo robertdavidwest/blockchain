@@ -15,21 +15,34 @@ function getGas() {
   return 0.05;
 }
 
-async function createTransaction(privateKey, fromAddress, toAddress, amount) {
+async function createTransaction(
+  privateKey,
+  verifyKey,
+  fromAddress,
+  toAddress,
+  amount
+) {
   // need to addSignature when ever new Transaction is created
-  const transaction = new Transaction(fromAddress, toAddress, amount);
+  const transaction = new Transaction(
+    verifyKey,
+    fromAddress,
+    toAddress,
+    amount
+  );
   TX_POOL.push(transaction);
   await transaction.addSignature(privateKey);
 }
 
 class Transaction {
-  constructor(fromAddress, toAddress, amount) {
+  // Note: On actual bitcoin blockchain the fromAddress acts as the verification key
+  // but that is more complicated. I'm just using the public key, the principal still holds
+  constructor(verifyKey, fromAddress, toAddress, amount) {
     this.fromAddress = fromAddress;
     this.toAddress = toAddress;
+    this.verifyKey = verifyKey;
     this.amount = amount;
     const gas = getGas();
     this.gas = gas;
-    this.signature = null;
     const transactionObj = { fromAddress, toAddress, amount, gas };
 
     // create a hash of all transacton data
