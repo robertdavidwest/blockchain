@@ -1,5 +1,5 @@
 const Block = require("./block");
-const { hashObject } = require("./helpers");
+const { hashObject, strPreview } = require("./helpers");
 
 // holds transactions before they are on the block chain
 const TX_POOL = [];
