@@ -18,9 +18,10 @@ class Wallet {
     this.keys = coinkey;
     this.address = coinkey.publicAddress.toString("hex");
     this.balance = 0;
+
     // create a transaction to initialize your wallet and put it in the TX_POOL
-    const transaction = new Transaction("exchange", this.address, initBalance);
-    TX_POOL.push(transaction);
+    this._createInitTransaction("exchange", this.address, initBalance);
+
     // irl the "balance" is calculated on every
     // transaction by feeding in all prior transactions (or hashes of them)
     // so we will generate a fake transaction with the initBalance to kick things off
@@ -54,7 +55,11 @@ class Wallet {
     console.log(`${this.owner}'s wallet Balance: ${this.getBalance()}`);
     console.log("");
   }
-
+  async _createInitTransaction(fromAddress, toAddress, amount) {
+    const transaction = new Transaction(fromAddress, toAddress, amount);
+    await transaction.addSignature(this.keys.privateKey);
+    TX_POOL.push(transaction);
+  }
   async createTransaction(toAddress, amount) {
     const fromShort = strPreview(this.address);
     const toShort = strPreview(toAddress);
