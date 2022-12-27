@@ -4,7 +4,9 @@ const { Block } = require("./block");
 const { hashObject, strPreview } = require("./helpers");
 
 // TX_POOL holds transactions before they are on the block chain
+// every minor has a transaction pool in memory on their machine/node
 const TX_POOL = [];
+
 const BLOCK_CHAIN = [];
 
 function getAmtPerAddress(transactionType, walletAddress) {
@@ -21,9 +23,13 @@ function getAmtPerAddress(transactionType, walletAddress) {
   }, 0);
 }
 
-function getLastBlockHash() {
+function getLastBlock() {
   if (!BLOCK_CHAIN.length) return null;
-  return hashObject(BLOCK_CHAIN[BLOCK_CHAIN.length - 1]).toString("hex");
+  return BLOCK_CHAIN[BLOCK_CHAIN.length - 1];
+}
+
+function getBlockHash(block) {
+  return hashObject(block).toString("hex");
 }
 
 async function validateSignature(tx) {
@@ -35,15 +41,30 @@ async function validateSignature(tx) {
   }
 }
 
+async function validTransaction(tx, lastBlock) {
+  // Validate signature and compare transactions from
+  // prior block
+  const validSignature = await validateSignature(tx);
+
+  // check to see if any of the transactions being added
+  // into this block were in the previous block
+  let dupTransaction = false;
+  if (lastBlock) {
+    dupTransaction = lastBlock.transactions.some((x) => x.txHash === tx.txHash);
+  }
+  const isOk = validSignature & !dupTransaction;
+  return isOk;
+}
+
 function createBlockFromTxPool(secondsPerBlock) {
   return setInterval(async function () {
     if (TX_POOL.length) {
       // For simplcity I am having each block
       // contain just a single transaction for now
       const tx = TX_POOL.shift();
-      const isOk = await validateSignature(tx);
-      if (isOk) {
-        const previousBlockHash = getLastBlockHash();
+      const lastBlock = getLastBlock();
+      if (validTransaction(tx, lastBlock)) {
+        const previousBlockHash = getBlockHash(lastBlock);
         const block = new Block([tx], previousBlockHash);
         BLOCK_CHAIN.push(block);
       } else {
