@@ -5,6 +5,16 @@ const {
 } = require("./blockchain");
 const Wallet = require("./wallet");
 
+function printFooter() {
+  console.log("");
+  console.log("");
+  console.log("");
+  console.log("");
+  console.log("");
+  console.log("");
+  console.log("");
+}
+
 function displayInitial(wallet1, wallet2) {
   console.log("#---------------------------------------------------------");
   console.log("#---------------------------------------------------------");
@@ -28,9 +38,13 @@ function displayBlockchainInfo(wallet1, wallet2) {
 const main = async function () {
   const secondsPerDisplay = 10;
   const secondsPerMine = 11;
-  const myWallet = new Wallet("Robert", 1.0);
-  const davesWallet = new Wallet("Dave", 1.0);
+
+  const myWallet = new Wallet("Robert");
+  const davesWallet = new Wallet("Dave");
+
   displayInitial(myWallet, davesWallet);
+  await myWallet.fundWallet(1.0);
+  await davesWallet.fundWallet(0.25);
 
   const myExpectedFinalBalance = 0.9;
   let success = await myWallet.createTransaction(davesWallet.address, 0.1);
@@ -45,6 +59,8 @@ const main = async function () {
       clearInterval(displayLoopId);
       clearInterval(minorSimId);
     }
+
+    printFooter();
   }, secondsPerDisplay * 1000);
 };
 

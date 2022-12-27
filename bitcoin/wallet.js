@@ -4,7 +4,7 @@ const createTransaction = require("./transaction");
 const { getAmtPerAddress } = require("./blockchain");
 
 class Wallet {
-  constructor(owner, initBalance) {
+  constructor(owner) {
     // Private Key is a 64 digit hex randomly created
     // Public key is a hash of the private key
     // ( using elliptic curve )
@@ -18,16 +18,22 @@ class Wallet {
     this.keys = coinkey;
     this.address = coinkey.publicAddress.toString("hex");
     this.balance = 0;
-
-    // create a transaction to initialize your wallet and put it in the TX_POOL
+  }
+  async fundWallet(purchaseAmountBtc) {
+    // create a transaction to initialize your wallet usage.
+    // The transaction is put inot the TX_POOL
     // (simulation of purchasing BTC from exchange or elsewhere)
+
+    // For simplicity we can assume the exchange always has enough money to
+    // fund these wallets
+    console.log(`Funding ${this.owner}'s wallet with ${purchaseAmountBtc} BTC`);
     const exchangeCoinkey = new CoinKey.createRandom();
-    this._createInitTransaction(
+    await createTransaction(
       exchangeCoinkey.privateKey,
       exchangeCoinkey.publicKey,
       exchangeCoinkey.publicAddress,
       this.address,
-      initBalance
+      purchaseAmountBtc
     );
   }
   checkBalance() {
@@ -50,9 +56,6 @@ class Wallet {
   }
   displayBalance() {
     console.log(`${this.owner}'s wallet Balance: ${this.getBalance()}`);
-  }
-  async _createInitTransaction(pk, verifyKey, fromAddress, toAddress, amount) {
-    await createTransaction(pk, verifyKey, fromAddress, toAddress, amount);
   }
   async createTransaction(toAddress, amount) {
     const fromShort = strPreview(this.address);

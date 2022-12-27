@@ -40,15 +40,15 @@ class Transaction {
 
     // signature is calculated outside of constructor because it is async
     this.signature = null;
-
-    // note for etherium transaction you would also include:
-    // "nonce" - starts at 0 and increments each transaction
-    // and
-    // "data" - could be a smart contract or inputs to call another smart contract
   }
   async addSignature(privateKey) {
     this.signature = await eccrypto.sign(privateKey, this.txHash);
   }
 }
+
+// note for etherium transaction you would also include:
+// "nonce" - starts at 0 and increments each transaction
+// and
+// "data" - could be a smart contract or inputs to call another smart contract
 
 module.exports = createTransaction;
