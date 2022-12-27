@@ -29,7 +29,8 @@ function getLastBlock() {
 }
 
 function getBlockHash(block) {
-  return hashObject(block).toString("hex");
+  if (block) return hashObject(block).toString("hex");
+  else return null;
 }
 
 async function validateSignature(tx) {
@@ -56,23 +57,40 @@ async function validTransaction(tx, lastBlock) {
   return isOk;
 }
 
-function createBlockFromTxPool(secondsPerBlock) {
-  return setInterval(async function () {
-    if (TX_POOL.length) {
-      // For simplcity I am having each block
-      // contain just a single transaction for now
-      const tx = TX_POOL.shift();
-      const lastBlock = getLastBlock();
-      if (validTransaction(tx, lastBlock)) {
-        const previousBlockHash = getBlockHash(lastBlock);
-        const block = new Block([tx], previousBlockHash);
-        BLOCK_CHAIN.push(block);
-      } else {
-        console.log(
-          `Tx not processed. Signature was bad for tx with txHash ${tx.txHash}`
-        );
-      }
+function validNonse(block) {
+  const { bits } = block;
+  const blockHash = getBlockHash(block);
+  const valid = blockHash.slice(0, bits) === "0".repeat(bits);
+  return valid;
+}
+
+function findValidNonse(block) {
+  while (!validNonse(block)) block.nonse++;
+  return block;
+}
+
+function createBlockFromTxPool() {
+  if (TX_POOL.length) {
+    // For simplcity I am having each block
+    // contain just a single transaction for now
+    const tx = TX_POOL.shift();
+    const lastBlock = getLastBlock();
+    if (validTransaction(tx, lastBlock)) {
+      const previousBlockHash = getBlockHash(lastBlock);
+      let block = new Block([tx], previousBlockHash);
+      block = findValidNonse(block);
+      BLOCK_CHAIN.push(block);
+    } else {
+      console.log(
+        `Tx not processed. Signature was bad for tx with txHash ${tx.txHash}`
+      );
     }
+  }
+}
+
+function createMinorProcess(secondsPerBlock) {
+  return setInterval(async function () {
+    createBlockFromTxPool();
   }, secondsPerBlock * 1000);
 }
 
@@ -112,6 +130,7 @@ module.exports = {
   TX_POOL,
   BLOCK_CHAIN,
   getAmtPerAddress,
+  createMinorProcess,
   createBlockFromTxPool,
   displayTxPool,
   displayBlockChain,

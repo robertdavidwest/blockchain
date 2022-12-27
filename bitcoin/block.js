@@ -34,14 +34,14 @@ class Block {
     // the difficulty rating of the block
     // more bits, difficulty of blockchain increases
     // making it more difficult to mine the block
-    this.bits = null; // needs to be added
+    this.bits = 1; // needs to be added
 
     // Nonse - a special number
     // determined by minors
     // Added to the end of the Block by a Minor as their proof
     // as a valid block
     // (and that a certain amt of work has been done to validate this block)
-    this.nonse = null; // needs to be implemented
+    this.nonse = 0;
 
     // blockReward - how much bitcoin will be given to the minor
     // that successfully mines the block
