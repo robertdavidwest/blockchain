@@ -1,7 +1,7 @@
 const CoinKey = require("coinkey");
 const { strPreview } = require("./helpers");
 const createTransaction = require("./transaction");
-const { getAmtPerAddress } = require("./blockchain");
+const { miner } = require("./blockchain");
 
 class Wallet {
   constructor(owner) {
@@ -21,7 +21,7 @@ class Wallet {
   }
   async fundWallet(purchaseAmountBtc) {
     // create a transaction to initialize your wallet usage.
-    // The transaction is put inot the TX_POOL
+    // The transaction is sent to the network and enters the txPool of each miner
     // (simulation of purchasing BTC from exchange or elsewhere)
 
     // For simplicity we can assume the exchange always has enough money to
@@ -38,8 +38,8 @@ class Wallet {
   }
   checkBalance() {
     this.balance =
-      getAmtPerAddress("received", this.address) -
-      getAmtPerAddress("sent", this.address);
+      miner.getAmtPerAddress("received", this.address) -
+      miner.getAmtPerAddress("sent", this.address);
   }
   getBalance() {
     this.checkBalance();
@@ -72,7 +72,7 @@ class Wallet {
       const pk = this.keys.privateKey;
       const verifyKey = this.keys.publicKey;
       await createTransaction(pk, verifyKey, fromAddress, toAddress, amount);
-      console.log("Transaction Successful and sent to TX_POOL");
+      console.log("Transaction Successful and sent to Transaction Pool");
       return 1;
     } else {
       console.log(

@@ -1,5 +1,5 @@
 const {
-  createMinorProcess,
+  createMinerProcess,
   displayTxPool,
   displayBlockChain,
 } = require("./blockchain");
@@ -49,7 +49,7 @@ const main = async function () {
   const myExpectedFinalBalance = 0.9;
   let success = await myWallet.createTransaction(davesWallet.address, 0.1);
 
-  const minorSimId = createMinorProcess(secondsPerMine);
+  const minorSimId = createMinerProcess(secondsPerMine);
   const displayLoopId = setInterval(async function () {
     displayBlockchainInfo(myWallet, davesWallet);
     if (!success) {

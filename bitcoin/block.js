@@ -41,6 +41,7 @@ class Block {
     // Added to the end of the Block by a Minor as their proof
     // as a valid block
     // (and that a certain amt of work has been done to validate this block)
+    // A valid Nonse is the "Proof of work"
     this.nonse = 0;
 
     // blockReward - how much bitcoin will be given to the minor
