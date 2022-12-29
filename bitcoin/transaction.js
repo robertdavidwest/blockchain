@@ -1,7 +1,7 @@
 const eccrypto = require("eccrypto");
 
 const { hashObject } = require("./helpers");
-const { miner } = require("./blockchain");
+const { addToTransactionPool } = require("./blockchain");
 
 function getGas() {
   // will figure this out later
@@ -17,7 +17,7 @@ function getGas() {
 
 async function createTransaction(pk, vk, fromAddress, toAddress, amount) {
   const transaction = new Transaction(vk, fromAddress, toAddress, amount);
-  miner.txPool.push(transaction);
+  addToTransactionPool(transaction);
   // need to addSignature when ever new Transaction is created
   await transaction.addSignature(pk);
 }

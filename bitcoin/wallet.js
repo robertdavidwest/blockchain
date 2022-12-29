@@ -1,7 +1,7 @@
 const CoinKey = require("coinkey");
 const { strPreview } = require("./helpers");
 const createTransaction = require("./transaction");
-const { miner } = require("./blockchain");
+const { getAmtPerAddress } = require("./blockchain");
 
 class Wallet {
   constructor(owner) {
@@ -38,8 +38,8 @@ class Wallet {
   }
   checkBalance() {
     this.balance =
-      miner.getAmtPerAddress("received", this.address) -
-      miner.getAmtPerAddress("sent", this.address);
+      getAmtPerAddress("received", this.address) -
+      getAmtPerAddress("sent", this.address);
   }
   getBalance() {
     this.checkBalance();

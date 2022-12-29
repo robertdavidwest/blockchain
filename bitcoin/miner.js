@@ -1,5 +1,6 @@
 const eccrypto = require("eccrypto");
 
+const Wallet = require("./wallet");
 const { Block } = require("./block");
 const { hashObject } = require("./helpers");
 
@@ -60,6 +61,8 @@ function validateBlock(block, priorBlock) {
 // Simulates a Full node of the bitcoin network
 class Miner {
   constructor() {
+    this.wallet = new Wallet("Miner");
+
     // every node has their own copy of the blockchain
     this.blockchain = [];
 
@@ -88,21 +91,6 @@ class Miner {
         );
       }
     }
-  }
-  // I'm not sure where this work get's done. To add the "input" transactions for a new
-  // transaction. For now it lives here but I don't think a miner does this
-  getAmtPerAddress(transactionType, walletAddress) {
-    let address;
-    if (transactionType === "sent") address = "fromAddress";
-    else if (transactionType === "received") address = "toAddress";
-
-    return this.blockchain.reduce((accum, block) => {
-      const transactions = block.transactions.filter(
-        (t) => t[address] === walletAddress
-      );
-      accum += transactions.reduce((a, x) => a + x.amount, 0);
-      return accum;
-    }, 0);
   }
 }
 
