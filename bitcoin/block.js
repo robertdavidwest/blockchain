@@ -64,6 +64,10 @@ class GenesisBlock extends Block {
 
   // - Difficulty and difficulty interval for the blockchain:
   // ( defines how the difficulty is increasing or decreasing as blocks are added )
+  // block difficulty is adjusted every 2 weeks on the bitcoin blockchain network - as of 12/2022
+  // (based on the volume of the network )
+  // Bitcoin wants to have an average blocktime of 10 minutes
+  // (1 new block, to be created every 10 minutes)
 
   // - Reward for mining:
   // every time somone is "rewarded" with bitcoin. This is new coin. It is created at this

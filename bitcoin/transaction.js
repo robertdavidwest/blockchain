@@ -40,6 +40,11 @@ class Transaction {
 
     // signature is calculated outside of constructor because it is async
     this.signature = null;
+
+    // TBD:
+    // "number of confirmations" - seen on transactions in blockchain explorers is actually
+    // the number of blocks that have been added to the chain since the block containing
+    // your transaction
   }
   async addSignature(privateKey) {
     this.signature = await eccrypto.sign(privateKey, this.txHash);

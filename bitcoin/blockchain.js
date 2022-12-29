@@ -11,6 +11,8 @@ function createMinerProcess(secondsPerBlock) {
   return setInterval(async function () {
     miner.txPool.push(TX_POOL.shift());
     miner.createNewBlock();
+
+    // our network concensus comes from a single miner at this stage
     BLOCKCHAIN = miner.blockchain;
   }, secondsPerBlock * 1000);
 }
