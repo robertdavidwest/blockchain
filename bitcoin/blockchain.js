@@ -4,23 +4,28 @@ const { strPreview } = require("./helpers");
 let BLOCKCHAIN = [];
 const TX_POOL = [];
 
-function createMinerProcess(secondsPerBlock) {
-  const Miner = require("./Miner");
+function createMinerProcess(secondsPerCheck) {
+  const { Miner } = require("./Miner");
   // we need at least one minor to validate transactions
   const miner = new Miner();
-  return setInterval(async function () {
-    miner.txPool.push(TX_POOL.shift());
-    miner.createNewBlock();
+  const workerId = miner.work(secondsPerCheck);
+  const txProcessId = setInterval(async function () {
+    const tx = TX_POOL.shift();
+    if (tx) miner.txPool.push(tx);
 
     // our network concensus comes from a single miner at this stage
     BLOCKCHAIN = miner.blockchain;
-  }, secondsPerBlock * 1000);
+  }, secondsPerCheck * 1000);
+  return [workerId, txProcessId];
 }
 
 function addToTransactionPool(tx) {
   TX_POOL.push(tx);
 }
 
+function getTransactionPool(tx) {
+  return TX_POOL;
+}
 function getAmtPerAddress(transactionType, walletAddress) {
   // I'm not sure where this work get's done. To add the "input" transactions for a new
   // transaction. For now it lives here but I don't think a miner does this
@@ -72,6 +77,7 @@ function displayBlockChain() {
 
 module.exports = {
   addToTransactionPool,
+  getTransactionPool,
   getAmtPerAddress,
   createMinerProcess,
   displayTxPool,

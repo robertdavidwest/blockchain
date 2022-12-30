@@ -49,19 +49,18 @@ const main = async function () {
   const myExpectedFinalBalance = 0.9;
   let success = await myWallet.createTransaction(davesWallet.address, 0.1);
 
-  const minorSimId = createMinerProcess(secondsPerMine);
+  const intervalIds = createMinerProcess(secondsPerMine);
   const displayLoopId = setInterval(async function () {
     displayBlockchainInfo(myWallet, davesWallet);
     if (!success) {
       success = await myWallet.createTransaction(davesWallet.address, 0.1);
     }
     if (myWallet.getBalance() === myExpectedFinalBalance) {
-      clearInterval(displayLoopId);
-      clearInterval(minorSimId);
+      intervalIds.forEach((x) => clearInterval(x));
     }
-
     printFooter();
   }, secondsPerDisplay * 1000);
+  intervalIds.push(displayLoopId);
 };
 
 if (require.main === module) {

@@ -1,3 +1,4 @@
+const child_process = require("child_process");
 const eccrypto = require("eccrypto");
 
 const Wallet = require("./wallet");
@@ -7,6 +8,13 @@ const { hashObject } = require("./helpers");
 function getBlockHash(block) {
   if (block) return hashObject(block).toString("hex");
   else return null;
+}
+
+function validateNonse(block) {
+  const { bits } = block;
+  const blockHash = getBlockHash(block);
+  const valid = blockHash.slice(0, bits) === "0".repeat(bits);
+  return valid;
 }
 
 async function validateSignature(tx) {
@@ -33,19 +41,6 @@ async function validTransaction(tx, lastBlock) {
   return isOk;
 }
 
-function validateNonse(block) {
-  const { bits } = block;
-  const blockHash = getBlockHash(block);
-  const valid = blockHash.slice(0, bits) === "0".repeat(bits);
-  return valid;
-}
-
-function findValidNonse(block) {
-  // Used by minors to create a valid block
-  while (!validateNonse(block)) block.nonse++;
-  return block;
-}
-
 function validateBlock(block, priorBlock) {
   // used by minors to validate potential blocks
   // that are sent to the network
@@ -69,28 +64,77 @@ class Miner {
     // txPool holds transactions before they are on the block chain
     // every node will have their own transaction pool
     this.txPool = [];
+
+    // subprocess used to perform work
+    this.workerProcess = null;
   }
   getLastBlock() {
     if (!this.blockchain.length) return null;
     return this.blockchain[this.blockchain.length - 1];
   }
-  createNewBlock() {
-    if (this.txPool.length) {
-      // For simplcity I am having each block
-      // contain just a single transaction for now
-      const tx = this.txPool.shift();
-      const lastBlock = this.getLastBlock();
-      if (validTransaction(tx, lastBlock)) {
-        const previousBlockHash = getBlockHash(lastBlock);
-        let block = new Block([tx], previousBlockHash);
-        block = findValidNonse(block);
-        this.blockchain.push(block);
-      } else {
-        console.log(
-          "Transaction not valid, either the signature was bad or the tx appeared in a previous block"
-        );
-      }
+  cleanTxPool(completedTransactions) {
+    // if a new block is received from the blockchain
+    // then we need to remove tx that were included in it
+    const txHashes = completedTransactions.map((x) => x.txHash);
+    this.txPool = this.txPool.filter(!tx.hashes.includes(x.txHash));
+  }
+  checkForNewBlocks() {
+    // do something
+  }
+  shareNewBlock(block) {
+    // do something
+  }
+  createPotentialBlock(transactions, lastBlock) {
+    if (transactions.every((tx) => validTransaction(tx, lastBlock))) {
+      const previousBlockHash = getBlockHash(lastBlock);
+      let block = new Block(transactions, previousBlockHash);
+      return block;
+    } else {
+      console.log(
+        "Transaction not valid, either the signature was bad or the tx appeared in a previous block"
+      );
     }
+  }
+  createBlock() {
+    if (this.txPool.length === 0) {
+      return;
+    }
+    const tx = this.txPool[0];
+    const lastBlock = this.getLastBlock();
+    const block = this.createPotentialBlock([tx], lastBlock);
+    if (!block) return;
+
+    // Send block to worker process to find valid nonse
+    const worker = child_process.fork("./minerWorker");
+    worker.send({ block });
+
+    // When nonse is found the block is added to the miners blockchain
+    // and broadcast to the network
+    worker.on("message", ({ nonse }) => {
+      block.nonse = nonse;
+      this.txPool.shift();
+      this.blockchain.push(block);
+      this.shareNewBlock(block);
+      worker.kill();
+    });
+    return worker;
+  }
+  work(secondsPerCheck) {
+    return setInterval(() => {
+      if (!this.workerProcess || this.workerProcess.killed)
+        this.workerProcess = this.createBlock();
+
+      const newBlock = this.checkForNewBlocks();
+      if (newBlock && validateBlock(newBlock)) {
+        // new block received from network
+        // kill current work
+        // validate the block and add it to the chain
+        // then start working again
+        this.workerProcess.kill();
+        this.blockchain.push(newBlock);
+        this.cleanTxPool(newBlock.transactions);
+      }
+    }, secondsPerCheck * 1000);
   }
 }
 
@@ -120,4 +164,4 @@ class Miner {
 // difficulty of the network
 // hashing time
 
-module.exports = Miner;
+module.exports = { validateNonse, Miner };
