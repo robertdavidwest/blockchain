@@ -15,6 +15,8 @@ function createMinerProcess(secondsPerCheck) {
 
     // our network concensus comes from a single miner at this stage
     BLOCKCHAIN = miner.blockchain;
+
+    console.log("miner balance", miner.wallet.getBalance());
   }, secondsPerCheck * 1000);
   return [workerId, txProcessId];
 }
@@ -23,9 +25,14 @@ function addToTransactionPool(tx) {
   TX_POOL.push(tx);
 }
 
-function getTransactionPool(tx) {
+function getTransactionPool() {
   return TX_POOL;
 }
+
+function getBlockChain() {
+  return BLOCKCHAIN;
+}
+
 function getAmtPerAddress(transactionType, walletAddress) {
   // I'm not sure where this work get's done. To add the "input" transactions for a new
   // transaction. For now it lives here but I don't think a miner does this
@@ -78,6 +85,7 @@ function displayBlockChain() {
 module.exports = {
   addToTransactionPool,
   getTransactionPool,
+  getBlockChain,
   getAmtPerAddress,
   createMinerProcess,
   displayTxPool,

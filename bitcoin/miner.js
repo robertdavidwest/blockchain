@@ -2,6 +2,7 @@ const child_process = require("child_process");
 const eccrypto = require("eccrypto");
 
 const Wallet = require("./wallet");
+const createTransaction = require("./transaction");
 const { Block } = require("./block");
 const { hashObject } = require("./helpers");
 
@@ -68,6 +69,19 @@ class Miner {
     // subprocess used to perform work
     this.workerProcess = null;
   }
+  async mintBitcoin(reward) {
+    // new bitcoin is minted after a successful block creation
+    // im not sure how the actual blockchain mints money
+    // im just creating a transaction from a minter
+    const minter = new Wallet("minter");
+    await createTransaction(
+      minter.keys.privateKey,
+      minter.keys.publicKey,
+      minter.keys.publicAddress,
+      this.wallet.address,
+      reward
+    );
+  }
   getLastBlock() {
     if (!this.blockchain.length) return null;
     return this.blockchain[this.blockchain.length - 1];
@@ -108,11 +122,13 @@ class Miner {
     const worker = child_process.fork("./minerWorker");
     worker.send({ block });
 
+    // Block Validation:
     // When nonse is found the block is added to the miners blockchain
     // and broadcast to the network
-    worker.on("message", ({ nonse }) => {
+    worker.on("message", async ({ nonse }) => {
       block.nonse = nonse;
       this.txPool.shift();
+      await this.mintBitcoin(block.blockReward);
       this.blockchain.push(block);
       this.shareNewBlock(block);
       worker.kill();

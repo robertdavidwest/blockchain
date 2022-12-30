@@ -1,8 +1,16 @@
 const { MerkleTree } = require("merkletreejs");
 const SHA256 = require("crypto-js/sha256");
+const { getBlockChain } = require("./blockchain");
 
 const MAGIC_NUMBER = 123;
 const BLOCK_VERSION = "1.0.0";
+
+function getBlockReward() {
+  const numBlocks = getBlockChain().length;
+  const init = genesisBlockInfo.initialBlockReward;
+  const expoonent = Math.floor(numBlocks / genesisBlockInfo.blocksPerHalfing);
+  return init * Math.pow(0.5, expoonent);
+}
 
 class Block {
   constructor(transactions, previousBlockHash) {
@@ -48,7 +56,7 @@ class Block {
     // that successfully mines the block
     // typically decreases as the network gets older
     // (this is the case with bitcoin)
-    this.blockReward = null;
+    this.blockReward = getBlockReward();
     // Bitcoin:
     // first block created has a reward of 50 BTC
     // by 2012 reward was halved to 25 BTC
@@ -59,7 +67,7 @@ class Block {
 
 // Here is a the Genesis Block. This is just conceptual information at this stage
 // Its not used in the simulation yet
-class GenesisBlock extends Block {
+const genesisBlockInfo = {
   // Has additional properties beyond a block:
 
   // - Difficulty and difficulty interval for the blockchain:
@@ -81,10 +89,7 @@ class GenesisBlock extends Block {
   // Before any blocks were mined there was 0 BTC in circulation
   // Satoshi mined the first block and mined many subsequent blocks
   // bringing 50 BTC into supply
-
-  constructor(transactions) {
-    super(transactions, null);
-    this.blockReward = 50;
-  }
-}
-module.exports = { Block, GenesisBlock };
+  initialBlockReward: 50,
+  blocksPerHalfing: 2, // network is actuall 210,000 (approx every 4 years)
+};
+module.exports = { Block };
