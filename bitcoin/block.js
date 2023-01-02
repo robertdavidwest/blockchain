@@ -5,15 +5,16 @@ const { getBlockChain } = require("./blockchain");
 const MAGIC_NUMBER = 123;
 const BLOCK_VERSION = "1.0.0";
 
-function getBlockReward() {
-  const numBlocks = getBlockChain().length;
+function getBlockReward(blockchainLength) {
   const init = genesisBlockInfo.initialBlockReward;
-  const expoonent = Math.floor(numBlocks / genesisBlockInfo.blocksPerHalfing);
+  const expoonent = Math.floor(
+    blockchainLength / genesisBlockInfo.blocksPerHalfing
+  );
   return init * Math.pow(0.5, expoonent);
 }
 
 class Block {
-  constructor(transactions, previousBlockHash) {
+  constructor(transactions, previousBlockHash, blockchainLength) {
     // identifies the bitcoin blockchain
     // could also be prod or dev network etc
     this.magicNumber = MAGIC_NUMBER;
@@ -56,7 +57,7 @@ class Block {
     // that successfully mines the block
     // typically decreases as the network gets older
     // (this is the case with bitcoin)
-    this.blockReward = getBlockReward();
+    this.blockReward = getBlockReward(blockchainLength);
     // Bitcoin:
     // first block created has a reward of 50 BTC
     // by 2012 reward was halved to 25 BTC

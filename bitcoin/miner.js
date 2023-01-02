@@ -101,7 +101,8 @@ class Miner {
   createPotentialBlock(transactions, lastBlock) {
     if (transactions.every((tx) => validTransaction(tx, lastBlock))) {
       const previousBlockHash = getBlockHash(lastBlock);
-      let block = new Block(transactions, previousBlockHash);
+      const blockchainLength = this.blockchain.length;
+      let block = new Block(transactions, previousBlockHash, blockchainLength);
       return block;
     } else {
       console.log(

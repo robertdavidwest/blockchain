@@ -1,9 +1,11 @@
 const {
-  createMinerProcess,
   displayTxPool,
   displayBlockChain,
+  displayWalletInfo,
+  displayBalance,
 } = require("./blockchain");
-const Wallet = require("./wallet");
+const { strPreview } = require("./helpers");
+const { Network, createMinerProcess } = require("./network");
 
 function printFooter() {
   console.log("");
@@ -15,47 +17,83 @@ function printFooter() {
   console.log("");
 }
 
-function displayInitial(wallet1, wallet2) {
+function displayInitial(network, wallet1, wallet2) {
   console.log("#---------------------------------------------------------");
   console.log("#---------------------------------------------------------");
   console.log(`Info at: ${new Date(Date.now())}`);
   console.log("");
-  wallet1.displayWalletInfo();
-  wallet2.displayWalletInfo();
+  displayWalletInfo(network, wallet1);
+  displayWalletInfo(network, wallet2);
 }
 
-function displayBlockchainInfo(wallet1, wallet2) {
+function displayBlockchainInfo(network, wallet1, wallet2) {
   console.log("#---------------------------------------------------------");
   console.log("#---------------------------------------------------------");
   console.log(`Info at: ${new Date(Date.now())}`);
-  displayTxPool();
-  displayBlockChain();
-  wallet1.displayBalance();
-  wallet2.displayBalance();
+  displayTxPool(network);
+  displayBlockChain(network);
+  displayBalance(network, wallet1);
+  displayBalance(network, wallet2);
   console.log("");
+}
+
+async function sendIfBalance(network, wallet, toAddress, amount) {
+  const fromShort = strPreview(wallet.address);
+  const toShort = strPreview(toAddress);
+
+  console.log(
+    `Transaction request of ${amount} BTC from ${fromShort} to ${toShort} `
+  );
+  console.log("Attempting transaction...");
+
+  const balance = network.getWalletBalance(wallet);
+  if (amount < balance) {
+    await network.sendBtc(wallet, toAddress, amount);
+    console.log("Transaction Successful and sent to Transaction Pool");
+    return 1;
+  } else {
+    console.log(
+      `Unable to send. Not enough BTC in wallet. Balance: ${balance}`
+    );
+    return 0;
+  }
 }
 
 const main = async function () {
   const secondsPerDisplay = 10;
   const secondsPerMine = 11;
+  const numMiners = 1;
 
-  const myWallet = new Wallet("Robert");
-  const davesWallet = new Wallet("Dave");
+  const network = new Network(numMiners, secondsPerMine);
+  const myWallet = network.createWallet("Robert");
+  const davesWallet = network.createWallet("Dave");
 
-  displayInitial(myWallet, davesWallet);
-  await myWallet.fundWallet(1.0);
-  await davesWallet.fundWallet(0.25);
+  displayInitial(network, myWallet, davesWallet);
+  await network.fundWallet(myWallet, 1.0);
+  await network.fundWallet(davesWallet, 0.25);
 
+  const sendAmount = 0.1;
   const myExpectedFinalBalance = 0.9;
-  let success = await myWallet.createTransaction(davesWallet.address, 0.1);
+  let success = await sendIfBalance(
+    network,
+    myWallet,
+    davesWallet.address,
+    sendAmount
+  );
 
-  const intervalIds = createMinerProcess(secondsPerMine);
+  const intervalIds = createMinerProcess(network, secondsPerMine);
   const displayLoopId = setInterval(async function () {
-    displayBlockchainInfo(myWallet, davesWallet);
+    displayBlockchainInfo(network, myWallet, davesWallet);
     if (!success) {
-      success = await myWallet.createTransaction(davesWallet.address, 0.1);
+      success = await sendIfBalance(
+        network,
+        myWallet,
+        davesWallet.address,
+        sendAmount
+      );
     }
-    if (myWallet.getBalance() === myExpectedFinalBalance) {
+    const balance = network.getWalletBalance(myWallet);
+    if (balance === myExpectedFinalBalance) {
       intervalIds.forEach((x) => clearInterval(x));
     }
     printFooter();
