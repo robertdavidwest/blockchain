@@ -3,7 +3,7 @@ const {
   displayBlockChain,
   displayWalletInfo,
   displayBalance,
-} = require("./blockchain");
+} = require("./consoleDisplay");
 const { strPreview } = require("./helpers");
 const { Network, createMinerProcess } = require("./network");
 

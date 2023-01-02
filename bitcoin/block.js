@@ -1,6 +1,5 @@
 const { MerkleTree } = require("merkletreejs");
 const SHA256 = require("crypto-js/sha256");
-const { getBlockChain } = require("./blockchain");
 
 const MAGIC_NUMBER = 123;
 const BLOCK_VERSION = "1.0.0";
