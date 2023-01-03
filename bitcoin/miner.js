@@ -3,7 +3,7 @@ const eccrypto = require("eccrypto");
 
 const Wallet = require("./wallet");
 const createTransaction = require("./transaction");
-const { Block } = require("./block");
+const { getBlockReward, Block } = require("./block");
 const { hashObject } = require("./helpers");
 
 function getBlockHash(block) {
@@ -42,10 +42,11 @@ async function validTransaction(tx, lastBlock) {
   return isOk;
 }
 
-function validateBlock(block, priorBlock) {
+function validateBlock(block) {
   // used by minors to validate potential blocks
   // that are sent to the network
   // (this method won't be used until there are multiple miners)
+  const priorBlock = this.getLastBlock();
   const txsOk = block.transactions.every((x) =>
     validTransaction(x, priorBlock)
   );
@@ -68,13 +69,16 @@ class Miner {
 
     // subprocess used to perform work
     this.workerProcess = null;
+
+    // new block received from the network
+    this.newBlock = null;
   }
-  async mintBitcoin(reward) {
+  async getBlockRewardTx(reward) {
     // new bitcoin is minted after a successful block creation
     // im not sure how the actual blockchain mints money
     // im just creating a transaction from a minter
-    const minter = new Wallet("minter");
-    await createTransaction(
+    const minter = new Wallet("reward");
+    return await createTransaction(
       minter.keys.privateKey,
       minter.keys.publicKey,
       minter.keys.publicAddress,
@@ -86,6 +90,10 @@ class Miner {
     if (!this.blockchain.length) return null;
     return this.blockchain[this.blockchain.length - 1];
   }
+  getLastBlockHash() {
+    if (!this.getLastBlock()) return null;
+    else return getBlockHash(this.getLastBlock());
+  }
   cleanTxPool(completedTransactions) {
     // if a new block is received from the blockchain
     // then we need to remove tx that were included in it
@@ -93,16 +101,21 @@ class Miner {
     this.txPool = this.txPool.filter(!tx.hashes.includes(x.txHash));
   }
   checkForNewBlocks() {
-    // do something
+    let block;
+    if (this.newBlock) block = this.newBlock;
+    this.newBlock = null;
+    return block;
   }
-  shareNewBlock(block) {
-    // do something
-  }
-  createPotentialBlock(transactions, lastBlock) {
+  async createPotentialBlock(transactions, lastBlock) {
     if (transactions.every((tx) => validTransaction(tx, lastBlock))) {
       const previousBlockHash = getBlockHash(lastBlock);
-      const blockchainLength = this.blockchain.length;
-      let block = new Block(transactions, previousBlockHash, blockchainLength);
+
+      // add miner reward to transactions
+      const reward = getBlockReward(this.blockchain.length);
+      const rewardTx = await this.getBlockRewardTx(reward);
+      transactions.push(rewardTx);
+
+      let block = new Block(transactions, previousBlockHash, reward);
       return block;
     } else {
       console.log(
@@ -110,13 +123,13 @@ class Miner {
       );
     }
   }
-  createBlock() {
+  async createBlock() {
     if (this.txPool.length === 0) {
       return;
     }
     const tx = this.txPool[0];
     const lastBlock = this.getLastBlock();
-    const block = this.createPotentialBlock([tx], lastBlock);
+    const block = await this.createPotentialBlock([tx], lastBlock);
     if (!block) return;
 
     // Send block to worker process to find valid nonse
@@ -129,17 +142,15 @@ class Miner {
     worker.on("message", async ({ nonse }) => {
       block.nonse = nonse;
       this.txPool.shift();
-      await this.mintBitcoin(block.blockReward);
       this.blockchain.push(block);
-      this.shareNewBlock(block);
       worker.kill();
     });
     return worker;
   }
   work(secondsPerCheck) {
-    return setInterval(() => {
+    return setInterval(async () => {
       if (!this.workerProcess || this.workerProcess.killed)
-        this.workerProcess = this.createBlock();
+        this.workerProcess = await this.createBlock();
 
       const newBlock = this.checkForNewBlocks();
       if (newBlock && validateBlock(newBlock)) {
@@ -181,4 +192,4 @@ class Miner {
 // difficulty of the network
 // hashing time
 
-module.exports = { validateNonse, Miner };
+module.exports = { getBlockHash, validateNonse, Miner };

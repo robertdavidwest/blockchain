@@ -13,7 +13,7 @@ function getBlockReward(blockchainLength) {
 }
 
 class Block {
-  constructor(transactions, previousBlockHash, blockchainLength) {
+  constructor(transactions, previousBlockHash, reward) {
     // identifies the bitcoin blockchain
     // could also be prod or dev network etc
     this.magicNumber = MAGIC_NUMBER;
@@ -56,7 +56,7 @@ class Block {
     // that successfully mines the block
     // typically decreases as the network gets older
     // (this is the case with bitcoin)
-    this.blockReward = getBlockReward(blockchainLength);
+    this.blockReward = reward;
     // Bitcoin:
     // first block created has a reward of 50 BTC
     // by 2012 reward was halved to 25 BTC
@@ -92,4 +92,4 @@ const genesisBlockInfo = {
   initialBlockReward: 50,
   blocksPerHalfing: 2, // network is actuall 210,000 (approx every 4 years)
 };
-module.exports = { Block };
+module.exports = { getBlockReward, Block };
