@@ -62,7 +62,7 @@ async function sendIfBalance(network, wallet, toAddress, amount) {
 const main = async function () {
   const secondsPerDisplay = 10;
   const secondsPerMine = 11;
-  const numMiners = 1;
+  const numMiners = 2;
 
   const network = new Network(numMiners, secondsPerMine);
   const myWallet = network.createWallet("Robert");

@@ -42,7 +42,7 @@ class Block {
     // the difficulty rating of the block
     // more bits, difficulty of blockchain increases
     // making it more difficult to mine the block
-    this.bits = 1; // needs to be added
+    this.bits = 4; // needs to be added
 
     // Nonse - a special number
     // determined by minors

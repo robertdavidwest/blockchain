@@ -42,19 +42,6 @@ async function validTransaction(tx, lastBlock) {
   return isOk;
 }
 
-function validateBlock(block) {
-  // used by minors to validate potential blocks
-  // that are sent to the network
-  // (this method won't be used until there are multiple miners)
-  const priorBlock = this.getLastBlock();
-  const txsOk = block.transactions.every((x) =>
-    validTransaction(x, priorBlock)
-  );
-  const nonseOk = validateNonse(block);
-  const blockOk = txsOk & nonseOk;
-  return blockOk;
-}
-
 // Simulates a Full node of the bitcoin network
 class Miner {
   constructor() {
@@ -72,6 +59,18 @@ class Miner {
 
     // new block received from the network
     this.newBlock = null;
+  }
+  validateBlock(block) {
+    // used by minors to validate potential blocks
+    // that are sent to the network
+    // (this method won't be used until there are multiple miners)
+    const priorBlock = this.getLastBlock();
+    const txsOk = block.transactions.every((x) =>
+      validTransaction(x, priorBlock)
+    );
+    const nonseOk = validateNonse(block);
+    const blockOk = txsOk & nonseOk;
+    return blockOk;
   }
   async getBlockRewardTx(reward) {
     // new bitcoin is minted after a successful block creation
@@ -98,7 +97,7 @@ class Miner {
     // if a new block is received from the blockchain
     // then we need to remove tx that were included in it
     const txHashes = completedTransactions.map((x) => x.txHash);
-    this.txPool = this.txPool.filter(!tx.hashes.includes(x.txHash));
+    this.txPool = this.txPool.filter((tx) => !txHashes.includes(tx.txHash));
   }
   checkForNewBlocks() {
     let block;
@@ -151,9 +150,8 @@ class Miner {
     return setInterval(async () => {
       if (!this.workerProcess || this.workerProcess.killed)
         this.workerProcess = await this.createBlock();
-
       const newBlock = this.checkForNewBlocks();
-      if (newBlock && validateBlock(newBlock)) {
+      if (newBlock && this.validateBlock(newBlock)) {
         // new block received from network
         // kill current work
         // validate the block and add it to the chain

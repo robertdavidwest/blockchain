@@ -1,6 +1,6 @@
 const Wallet = require("./wallet");
 const createTransaction = require("./transaction");
-const { Miner } = require("./miner");
+const { getBlockHash, Miner } = require("./miner");
 
 class Network {
   constructor(numMiners, secondsPerCheck) {
@@ -14,6 +14,40 @@ class Network {
     this.blockchain = [];
 
     this.exchangeWallet = new Wallet("exchange");
+  }
+  getLastBlock() {
+    if (!this.blockchain.length) return null;
+    return this.blockchain[this.blockchain.length - 1];
+  }
+  getLastBlockHash() {
+    if (!this.getLastBlock()) return null;
+    else return getBlockHash(this.getLastBlock());
+  }
+  addNewBlock(resetMiners, block) {
+    const blockOk = resetMiners.every((x) => x.validateBlock(block));
+    if (blockOk) {
+      resetMiners.forEach((miner) => {
+        miner.newBlock = block;
+      });
+      this.blockchain.push(block);
+    }
+  }
+  checkForNewBlocks() {
+    const lastBlockHash = this.getLastBlockHash();
+    let newBlock;
+    const resetMiners = [];
+    this.miners.forEach((miner) => {
+      if (miner.getLastBlockHash() !== lastBlockHash) {
+        newBlock = miner.getLastBlock();
+      } else {
+        resetMiners.push(miner);
+      }
+    });
+    if (newBlock) {
+      this.addNewBlock(resetMiners, newBlock);
+      return 1;
+    }
+    return 0;
   }
   async sendBtc(wallet, toAddress, amount) {
     const pk = wallet.keys.privateKey;
@@ -58,17 +92,27 @@ class Network {
 }
 
 function createMinerProcess(network, secondsPerCheck) {
-  // our network concensus comes from a single miner at this stage
-  const miner = network.miners[0];
-  const minerId = network.minerIds[0];
-
+  // processing a single transaction per block
+  let tx = null;
   const txProcessId = setInterval(async function () {
-    const tx = network.txPool.shift();
-    if (tx) miner.txPool.push(tx);
-    network.blockchain = miner.blockchain;
-    console.log("miner balance", network.getWalletBalance(miner.wallet));
+    if (network.txPool.length === 0) {
+      return;
+    }
+    if (tx !== network.txPool[0]) {
+      tx = network.txPool[0];
+      network.miners.forEach((miner) => miner.txPool.push(tx));
+    }
+    if (network.checkForNewBlocks()) {
+      network.txPool.shift();
+    }
+    console.log("miner balances:");
+    network.miners.forEach((x, i) => {
+      const balance = network.getWalletBalance(x.wallet);
+      console.log(`miner ${i}: ${balance}`);
+    });
   }, secondsPerCheck * 1000);
-  return [minerId, txProcessId];
+  const processIds = network.minerIds.concat([txProcessId]);
+  return processIds;
 }
 
 module.exports = { Network, createMinerProcess };
