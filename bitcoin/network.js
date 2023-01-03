@@ -32,6 +32,9 @@ class Network {
       this.blockchain.push(block);
     }
   }
+  validBlock(block) {
+    return block.previousBlockHash === this.getLastBlockHash();
+  }
   checkForNewBlocks() {
     const lastBlockHash = this.getLastBlockHash();
     let newBlock;
@@ -43,7 +46,7 @@ class Network {
         resetMiners.push(miner);
       }
     });
-    if (newBlock) {
+    if (newBlock && this.validBlock(newBlock)) {
       this.addNewBlock(resetMiners, newBlock);
       return 1;
     }

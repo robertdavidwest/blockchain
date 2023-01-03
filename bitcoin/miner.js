@@ -156,7 +156,7 @@ class Miner {
         // kill current work
         // validate the block and add it to the chain
         // then start working again
-        this.workerProcess.kill();
+        if (this.workerProcess) this.workerProcess.kill();
         this.blockchain.push(newBlock);
         this.cleanTxPool(newBlock.transactions);
       }

@@ -6,6 +6,7 @@ const {
 } = require("./consoleDisplay");
 const { strPreview } = require("./helpers");
 const { Network, createMinerProcess } = require("./network");
+const { getBlockHash } = require("./miner");
 
 function printFooter() {
   console.log("");
@@ -60,8 +61,8 @@ async function sendIfBalance(network, wallet, toAddress, amount) {
 }
 
 const main = async function () {
-  const secondsPerDisplay = 10;
-  const secondsPerMine = 11;
+  const secondsPerDisplay = 0;
+  const secondsPerMine = 1;
   const numMiners = 2;
 
   const network = new Network(numMiners, secondsPerMine);
@@ -93,8 +94,14 @@ const main = async function () {
       );
     }
     const balance = network.getWalletBalance(myWallet);
-    if (balance === myExpectedFinalBalance) {
+    if ((balance === myExpectedFinalBalance) | (balance === 2)) {
       intervalIds.forEach((x) => clearInterval(x));
+      console.log("Finished. Final Blockchain:");
+      network.blockchain = network.blockchain.map((x) => {
+        x.blockHash = getBlockHash(x);
+        return x;
+      });
+      console.dir(network.blockchain);
     }
     printFooter();
   }, secondsPerDisplay * 1000);
