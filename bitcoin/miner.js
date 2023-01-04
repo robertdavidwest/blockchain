@@ -57,8 +57,10 @@ class Miner {
     // subprocess used to perform work
     this.workerProcess = null;
 
+    // new block sent to the network
+    this.newBlockSend = null;
     // new block received from the network
-    this.newBlock = null;
+    this.newBlockReceived = null;
   }
   validateBlock(block) {
     // used by minors to validate potential blocks
@@ -69,7 +71,8 @@ class Miner {
       validTransaction(x, priorBlock)
     );
     const nonseOk = validateNonse(block);
-    const blockOk = txsOk & nonseOk;
+    const prevHashOk = block.previousBlockHash === this.getLastBlockHash();
+    const blockOk = txsOk & nonseOk & prevHashOk;
     return blockOk;
   }
   async getBlockRewardTx(reward) {
@@ -101,8 +104,8 @@ class Miner {
   }
   checkForNewBlocks() {
     let block;
-    if (this.newBlock) block = this.newBlock;
-    this.newBlock = null;
+    if (this.newBlockReceived) block = this.newBlockReceived;
+    this.newBlockReceived = null;
     return block;
   }
   async createPotentialBlock(transactions, lastBlock) {
@@ -140,8 +143,8 @@ class Miner {
     // and broadcast to the network
     worker.on("message", async ({ nonse }) => {
       block.nonse = nonse;
-      this.txPool.shift();
-      this.blockchain.push(block);
+      this.newBlockSend = block;
+      this.cleanTxPool(block.transactions);
       worker.kill();
     });
     return worker;
@@ -150,6 +153,7 @@ class Miner {
     return setInterval(async () => {
       if (!this.workerProcess || this.workerProcess.killed)
         this.workerProcess = await this.createBlock();
+
       const newBlock = this.checkForNewBlocks();
       if (newBlock && this.validateBlock(newBlock)) {
         // new block received from network
@@ -158,6 +162,9 @@ class Miner {
         // then start working again
         if (this.workerProcess) this.workerProcess.kill();
         this.blockchain.push(newBlock);
+
+        // if any block was waiting for review it is now invalid
+        this.newBlockSend = null;
         this.cleanTxPool(newBlock.transactions);
       }
     }, secondsPerCheck * 1000);

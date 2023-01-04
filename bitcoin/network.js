@@ -23,34 +23,37 @@ class Network {
     if (!this.getLastBlock()) return null;
     else return getBlockHash(this.getLastBlock());
   }
-  addNewBlock(resetMiners, block) {
-    const blockOk = resetMiners.every((x) => x.validateBlock(block));
+  cleanTxPool(completedTransactions) {
+    // if a new block is received from the blockchain
+    // then we need to remove tx that were included in it
+    const txHashes = completedTransactions.map((x) => x.txHash);
+    this.txPool = this.txPool.filter((tx) => !txHashes.includes(tx.txHash));
+  }
+  addNewBlock(block) {
+    const blockOk = this.miners.every((x) => x.validateBlock(block));
     if (blockOk) {
-      resetMiners.forEach((miner) => {
-        miner.newBlock = block;
+      this.miners.forEach((miner) => {
+        miner.newBlockReceived = block;
       });
       this.blockchain.push(block);
+      this.cleanTxPool(block.transactions);
     }
   }
   validBlock(block) {
     return block.previousBlockHash === this.getLastBlockHash();
   }
   checkForNewBlocks() {
-    const lastBlockHash = this.getLastBlockHash();
     let newBlock;
-    const resetMiners = [];
-    this.miners.forEach((miner) => {
-      if (miner.getLastBlockHash() !== lastBlockHash) {
-        newBlock = miner.getLastBlock();
-      } else {
-        resetMiners.push(miner);
+    for (let i = 0; i < this.miners.length; i++) {
+      const miner = this.miners[i];
+      if (miner.newBlockSend) {
+        newBlock = miner.newBlockSend;
+        break;
       }
-    });
-    if (newBlock && this.validBlock(newBlock)) {
-      this.addNewBlock(resetMiners, newBlock);
-      return 1;
     }
-    return 0;
+    if (newBlock && this.validBlock(newBlock)) {
+      this.addNewBlock(newBlock);
+    }
   }
   async sendBtc(wallet, toAddress, amount) {
     const pk = wallet.keys.privateKey;
@@ -105,14 +108,7 @@ function createMinerProcess(network, secondsPerCheck) {
       tx = network.txPool[0];
       network.miners.forEach((miner) => miner.txPool.push(tx));
     }
-    if (network.checkForNewBlocks()) {
-      network.txPool.shift();
-    }
-    console.log("miner balances:");
-    network.miners.forEach((x, i) => {
-      const balance = network.getWalletBalance(x.wallet);
-      console.log(`miner ${i}: ${balance}`);
-    });
+    network.checkForNewBlocks();
   }, secondsPerCheck * 1000);
   const processIds = network.minerIds.concat([txProcessId]);
   return processIds;
