@@ -24,7 +24,7 @@ class Node {
     // every node will have their own transaction pool
 
     // transactions are stored in a js object with the
-    // transaction.txHash as the key, to represent a hash map
+    // transaction.txHashHex as the key, to represent a hash map
     this.txPool = {};
   }
   sendToTxPool(tx) {
