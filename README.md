@@ -29,26 +29,36 @@ Core concepts included so far are:
 - Contains a list of transactions
 - Calculates the MerkleTree of the transactions and stores the MerkleRoot Hash value (hex)
 - Stores the hash of the previos block
+- Contains important information on the mining protocol such as:
+  - `bits` (the number of leading zeros needed for a valid nonse)
+  - `blockReward` (how much newly minted bitcoin does a miner receive for completing a block)
 
-### Blockchain
+### Node
 
-- For now this is a simple/crude array and blocks are pushed to this array
-- transactions are verified by observing data in this array
+- Represents a full node on the bitcoin network
+- Has its own copy of the blockchain and the transaction pool
+- `blockchain` and `txPool` are both array's, this may change in the future
+- The class `Miner` extends the class `Node` to have these attrbutes
+- The class `Network` extends the class `Node` to have these attrbutes
 
 ### Miner
 
-- A miner will pick up transactions from the TX Pool and attempt to create blocks
-- All Miners have their own transaction pool and blockchain
+- All Miners have their own transaction pool and blockchain (extended from `Node` class)
+- A miner will pick up transactions from it's `txPool` and attempt to create blocks
 - The miner will:
 
   - Verify the signature of each transaction on the block
-  - (For simplicity to begin with, a block is produced from a single transaction)
   - Search for a valid nonse per the `bits` specified in the `Block`
 
 - A miner runs a simple subprocess (using `child_process`) to find the `nonse` utilizing a single CPU (no gpus here)
 - A miner will be rewarded with newly minted bitcoin (tx fees not incorporated)
 
 The single CPU should work fine for simulation so long as the parameter `bits` on the `Block` object is kept lower than on the actual blockchain
+
+### Network
+
+- The `Network` class also extends the `Node` class to represent the consensus `blockchain` of the network
+- The instantiation of the `Network` initializes the `Miner` workers and handles all incoming transactions to the network
 
 ## Simulation
 
@@ -62,7 +72,7 @@ Presently the app is running in Node JS with a simple terminal stdout display. I
 - mining / proof of work. DONE (for single minor)
 - Tx fees/Gas
 
-- Miners should validate blocks produced by other miners and add to their copy of the blockchain or reject if invalid
+- Miners should validate blocks produced by other miners and add to their copy of the blockchain or reject if invalid. DONE
 
 ### FRONT END:
 
