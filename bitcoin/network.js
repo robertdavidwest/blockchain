@@ -14,6 +14,7 @@ class Network extends Node {
 
     this.exchangeWallet = new Wallet("exchange");
   }
+
   addNewBlock(block) {
     const blockOk = this.miners.every((x) => x.validateBlock(block));
     if (blockOk) {
@@ -42,7 +43,7 @@ class Network extends Node {
     const vk = wallet.keys.publicKey;
     const fromAddress = wallet.keys.publicAddress;
     const tx = await createTransaction(pk, vk, fromAddress, toAddress, amount);
-    this.txPool.push(tx);
+    this.sendToTxPool(tx);
   }
   createWallet(owner) {
     return new Wallet(owner);
@@ -83,12 +84,14 @@ function createMinerProcess(network, secondsPerCheck) {
   // processing a single transaction per block
   let tx = null;
   const txProcessId = setInterval(async function () {
-    if (network.txPool.length === 0) {
+    const txKeys = Object.keys(network.txPool);
+    if (txKeys.length === 0) {
       return;
     }
-    if (tx !== network.txPool[0]) {
-      tx = network.txPool[0];
-      network.miners.forEach((miner) => miner.txPool.push(tx));
+    const newTx = network.txPool[txKeys[0]];
+    if (tx !== newTx) {
+      tx = newTx;
+      network.miners.forEach((miner) => miner.sendToTxPool(tx));
     }
     network.checkForNewBlocks();
   }, secondsPerCheck * 1000);

@@ -70,10 +70,12 @@ class Miner extends Node {
     }
   }
   async createBlock() {
-    if (this.txPool.length === 0) {
+    const txKeys = Object.keys(this.txPool);
+
+    if (txKeys.length === 0) {
       return;
     }
-    const tx = this.txPool[0];
+    const tx = this.txPool[txKeys[0]];
     const lastBlock = this.getLastBlock();
     const block = await this.createPotentialBlock([tx], lastBlock);
     if (!block) return;

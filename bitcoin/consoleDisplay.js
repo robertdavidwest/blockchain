@@ -3,15 +3,17 @@ const { strPreview } = require("./helpers");
 function displayTxPool(network) {
   console.log("");
   console.log("TX Pool:");
-  if (!network.txPool.length) console.log("empty");
-  network.txPool.map((x, i) => {
+  const txKeys = Object.keys(network.txPool);
+  if (!txKeys.length) console.log("empty");
+  txKeys.map((key, i) => {
+    const tx = network.txPool[key];
     console.log(
       i,
-      strPreview(x.fromAddress),
+      strPreview(tx.fromAddress),
       "->",
-      strPreview(x.toAddress),
+      strPreview(tx.toAddress),
       "; Amt: ",
-      x.amount
+      tx.amount
     );
   });
 }

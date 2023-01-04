@@ -22,7 +22,20 @@ class Node {
 
     // txPool holds transactions before they are on the block chain
     // every node will have their own transaction pool
-    this.txPool = [];
+
+    // transactions are stored in a js object with the
+    // transaction.txHash as the key, to represent a hash map
+    this.txPool = {};
+  }
+  sendToTxPool(tx) {
+    const key = tx.txHashHex;
+    this.txPool[key] = tx;
+  }
+  cleanTxPool(completedTransactions) {
+    const hashes = completedTransactions.map((x) => x.txHashHex);
+    hashes.forEach((hash) => {
+      delete this.txPool[hash];
+    });
   }
   getBlockHash(block) {
     if (block) return hashObject(block).toString("hex");
@@ -57,12 +70,6 @@ class Node {
   getLastBlockHash() {
     if (!this.getLastBlock()) return null;
     else return this.getBlockHash(this.getLastBlock());
-  }
-  cleanTxPool(completedTransactions) {
-    // if a new block is received from the blockchain
-    // then we need to remove tx that were included in it
-    const txHashes = completedTransactions.map((x) => x.txHash);
-    this.txPool = this.txPool.filter((tx) => !txHashes.includes(tx.txHash));
   }
   validateBlock(block) {
     // used by minors to validate potential blocks

@@ -1,6 +1,6 @@
 const eccrypto = require("eccrypto");
 
-const { hashObject } = require("./helpers");
+const { hashObject, hashObjectHex } = require("./helpers");
 
 function getGas() {
   // will figure this out later
@@ -35,6 +35,9 @@ class Transaction {
 
     // create a hash of all transacton data
     this.txHash = hashObject(transactionObj);
+    // eccrypto does not like hex digest for signature so i have to store it separately
+    this.txHashHex = hashObjectHex(transactionObj);
+
     this.timestamp = new Date(Date.now());
 
     // signature is calculated outside of constructor because it is async
