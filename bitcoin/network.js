@@ -14,30 +14,6 @@ class Network extends Node {
 
     this.exchangeWallet = new Wallet("exchange");
   }
-
-  addNewBlock(block) {
-    const blockOk = this.miners.every((x) => x.validateBlock(block));
-    if (blockOk) {
-      this.miners.forEach((miner) => {
-        miner.newBlockReceived = block;
-      });
-      this.blockchain.push(block);
-      this.cleanTxPool(block.transactions);
-    }
-  }
-  checkForNewBlocks() {
-    let newBlock;
-    for (let i = 0; i < this.miners.length; i++) {
-      const miner = this.miners[i];
-      if (miner.newBlockSend) {
-        newBlock = miner.newBlockSend;
-        break;
-      }
-    }
-    if (newBlock && this.validateBlock(newBlock)) {
-      this.addNewBlock(newBlock);
-    }
-  }
   async sendBtc(wallet, toAddress, amount) {
     const pk = wallet.keys.privateKey;
     const vk = wallet.keys.publicKey;
@@ -77,6 +53,50 @@ class Network extends Node {
       this.getAmtPerAddress("received", wallet.address) -
       this.getAmtPerAddress("sent", wallet.address)
     );
+  }
+  addNewBlock(block) {
+    const blockOk = this.miners.every((x) => x.validateBlock(block));
+    if (blockOk) {
+      this.miners.forEach((miner) => {
+        miner.newBlockReceived = block;
+      });
+      this.blockchain.push(block);
+      this.cleanTxPool(block.transactions);
+    }
+  }
+  checkForNewBlocks() {
+    // The "network" represents the concensus.
+    // It checks the validity of the block against it's
+    // centralized data received from all miners
+
+    // Is it possible to model this concencus and lose the centralization?
+    //
+    // each miner would need to :
+    //
+    // check to see if a fork has occured and switch if it is in the "wrong" chain
+    //
+    // Fork occurs when 2 valid blocks are submitted to the network
+    // at the same time.
+    // Miners/nodes will always except the "longest chain" in a fork situation
+    // "longest chain" - Not just number of blocks. The longest chain is the chain that has the
+    // highest "cumulative difficulty" that is valid.
+    // "cumulative difficulty" - the amount of proof of work. So take the total sum of all "bits"
+    // on all blocks
+
+    // difficulty of the network
+    // hashing time
+
+    let newBlock;
+    for (let i = 0; i < this.miners.length; i++) {
+      const miner = this.miners[i];
+      if (miner.newBlockSend) {
+        newBlock = miner.newBlockSend;
+        break;
+      }
+    }
+    if (newBlock && this.validateBlock(newBlock)) {
+      this.addNewBlock(newBlock);
+    }
   }
 }
 

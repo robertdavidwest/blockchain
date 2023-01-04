@@ -108,30 +108,4 @@ class Miner extends Node {
   }
 }
 
-// eventually I want the block creation process to be running asynchrousnly for a miner
-// so that the miner can be listening to the network for new blocks to validate
-// if they successfully validate a new block from the network then they will abandon
-// the block being processed and start again
-// (because the existence of a new block will make the work done irrrelevant since a block
-//  contains the hash of the previous block)
-//
-// so something like...
-// async work() {
-//  await tryToMakeBlocks()
-//  await listenForNewBlocks()
-// }
-// listenForNewBlocks will not only be validating new blocks coming in. It also has to
-// check to see if a fork has occured and switch if it is in the "wrong" chain
-//
-// Fork occurs when 2 valid blocks are submitted to the network
-// at the same time.
-// Miners/nodes will always except the "longest chain" in a fork situation
-// "longest chain" - Not just number of blocks. The longest chain is the chain that has the
-// highest "cumulative difficulty" that is valid.
-// "cumulative difficulty" - the amount of proof of work. So take the total sum of all "bits"
-// on all blocks
-
-// difficulty of the network
-// hashing time
-
 module.exports = { Miner };
