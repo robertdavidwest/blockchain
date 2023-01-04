@@ -1,79 +1,24 @@
 const child_process = require("child_process");
-const eccrypto = require("eccrypto");
 
 const Wallet = require("./wallet");
 const createTransaction = require("./transaction");
 const { getBlockReward, Block } = require("./block");
-const { hashObject } = require("./helpers");
-
-function getBlockHash(block) {
-  if (block) return hashObject(block).toString("hex");
-  else return null;
-}
-
-function validateNonse(block) {
-  const { bits } = block;
-  const blockHash = getBlockHash(block);
-  const valid = blockHash.slice(0, bits) === "0".repeat(bits);
-  return valid;
-}
-
-async function validateSignature(tx) {
-  try {
-    await eccrypto.verify(tx.verifyKey, tx.txHash, tx.signature);
-    return 1;
-  } catch (error) {
-    return 0;
-  }
-}
-
-async function validTransaction(tx, lastBlock) {
-  // Validate signature and compare transactions from
-  // prior block
-  const validSignature = await validateSignature(tx);
-
-  // check to see if any of the transactions being added
-  // into this block were in the previous block
-  let dupTransaction = false;
-  if (lastBlock) {
-    dupTransaction = lastBlock.transactions.some((x) => x.txHash === tx.txHash);
-  }
-  const isOk = validSignature & !dupTransaction;
-  return isOk;
-}
+const { Node } = require("./node");
 
 // Simulates a Full node of the bitcoin network
-class Miner {
+class Miner extends Node {
   constructor() {
+    super();
     this.wallet = new Wallet("Miner");
-
-    // every node has their own copy of the blockchain
-    this.blockchain = [];
-
-    // txPool holds transactions before they are on the block chain
-    // every node will have their own transaction pool
-    this.txPool = [];
 
     // subprocess used to perform work
     this.workerProcess = null;
 
     // new block sent to the network
     this.newBlockSend = null;
+
     // new block received from the network
     this.newBlockReceived = null;
-  }
-  validateBlock(block) {
-    // used by minors to validate potential blocks
-    // that are sent to the network
-    // (this method won't be used until there are multiple miners)
-    const priorBlock = this.getLastBlock();
-    const txsOk = block.transactions.every((x) =>
-      validTransaction(x, priorBlock)
-    );
-    const nonseOk = validateNonse(block);
-    const prevHashOk = block.previousBlockHash === this.getLastBlockHash();
-    const blockOk = txsOk & nonseOk & prevHashOk;
-    return blockOk;
   }
   async getBlockRewardTx(reward) {
     // new bitcoin is minted after a successful block creation
@@ -88,29 +33,28 @@ class Miner {
       reward
     );
   }
-  getLastBlock() {
-    if (!this.blockchain.length) return null;
-    return this.blockchain[this.blockchain.length - 1];
+  sendNewBlock(block) {
+    this.newBlockSend = block;
+    this.cleanTxPool(block.transactions);
   }
-  getLastBlockHash() {
-    if (!this.getLastBlock()) return null;
-    else return getBlockHash(this.getLastBlock());
-  }
-  cleanTxPool(completedTransactions) {
-    // if a new block is received from the blockchain
-    // then we need to remove tx that were included in it
-    const txHashes = completedTransactions.map((x) => x.txHash);
-    this.txPool = this.txPool.filter((tx) => !txHashes.includes(tx.txHash));
-  }
-  checkForNewBlocks() {
-    let block;
-    if (this.newBlockReceived) block = this.newBlockReceived;
+  checkForNewBlocksReceived() {
+    let newBlock;
+    if (this.newBlockReceived) newBlock = this.newBlockReceived;
     this.newBlockReceived = null;
-    return block;
+    if (newBlock && this.validateBlock(newBlock)) {
+      // validate the block and add it to the chain
+      this.blockchain.push(newBlock);
+
+      // if any block was waiting for review it is now invalid
+      this.newBlockSend = null;
+      this.cleanTxPool(newBlock.transactions);
+      return 1;
+    }
+    return 0;
   }
   async createPotentialBlock(transactions, lastBlock) {
-    if (transactions.every((tx) => validTransaction(tx, lastBlock))) {
-      const previousBlockHash = getBlockHash(lastBlock);
+    if (transactions.every((tx) => this.validateTransaction(tx, lastBlock))) {
+      const previousBlockHash = this.getBlockHash(lastBlock);
 
       // add miner reward to transactions
       const reward = getBlockReward(this.blockchain.length);
@@ -143,8 +87,7 @@ class Miner {
     // and broadcast to the network
     worker.on("message", async ({ nonse }) => {
       block.nonse = nonse;
-      this.newBlockSend = block;
-      this.cleanTxPool(block.transactions);
+      this.sendNewBlock(block);
       worker.kill();
     });
     return worker;
@@ -154,18 +97,10 @@ class Miner {
       if (!this.workerProcess || this.workerProcess.killed)
         this.workerProcess = await this.createBlock();
 
-      const newBlock = this.checkForNewBlocks();
-      if (newBlock && this.validateBlock(newBlock)) {
+      if (this.checkForNewBlocksReceived() && this.workerProcess) {
         // new block received from network
         // kill current work
-        // validate the block and add it to the chain
-        // then start working again
-        if (this.workerProcess) this.workerProcess.kill();
-        this.blockchain.push(newBlock);
-
-        // if any block was waiting for review it is now invalid
-        this.newBlockSend = null;
-        this.cleanTxPool(newBlock.transactions);
+        this.workerProcess.kill();
       }
     }, secondsPerCheck * 1000);
   }
@@ -197,4 +132,4 @@ class Miner {
 // difficulty of the network
 // hashing time
 
-module.exports = { getBlockHash, validateNonse, Miner };
+module.exports = { Miner };

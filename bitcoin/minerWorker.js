@@ -1,8 +1,10 @@
-const { validateNonse } = require("./miner");
+const { Node } = require("./node");
+
+const node = new Node();
 
 function findValidNonse(block) {
   // Used by minors to create a valid block
-  while (!validateNonse(block)) block.nonse++;
+  while (!node.validateNonse(block)) block.nonse++;
   return block.nonse;
 }
 

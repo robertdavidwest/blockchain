@@ -1,33 +1,18 @@
 const Wallet = require("./wallet");
 const createTransaction = require("./transaction");
-const { getBlockHash, Miner } = require("./miner");
+const { Miner } = require("./miner");
+const { Node } = require("./node");
 
-class Network {
+class Network extends Node {
   constructor(numMiners, secondsPerCheck) {
+    super();
     this.miners = [];
     for (let i = 0; i < numMiners; i++) {
       this.miners.push(new Miner());
     }
     this.minerIds = this.miners.map((x) => x.work(secondsPerCheck));
 
-    this.txPool = [];
-    this.blockchain = [];
-
     this.exchangeWallet = new Wallet("exchange");
-  }
-  getLastBlock() {
-    if (!this.blockchain.length) return null;
-    return this.blockchain[this.blockchain.length - 1];
-  }
-  getLastBlockHash() {
-    if (!this.getLastBlock()) return null;
-    else return getBlockHash(this.getLastBlock());
-  }
-  cleanTxPool(completedTransactions) {
-    // if a new block is received from the blockchain
-    // then we need to remove tx that were included in it
-    const txHashes = completedTransactions.map((x) => x.txHash);
-    this.txPool = this.txPool.filter((tx) => !txHashes.includes(tx.txHash));
   }
   addNewBlock(block) {
     const blockOk = this.miners.every((x) => x.validateBlock(block));
@@ -39,9 +24,6 @@ class Network {
       this.cleanTxPool(block.transactions);
     }
   }
-  validBlock(block) {
-    return block.previousBlockHash === this.getLastBlockHash();
-  }
   checkForNewBlocks() {
     let newBlock;
     for (let i = 0; i < this.miners.length; i++) {
@@ -51,7 +33,7 @@ class Network {
         break;
       }
     }
-    if (newBlock && this.validBlock(newBlock)) {
+    if (newBlock && this.validateBlock(newBlock)) {
       this.addNewBlock(newBlock);
     }
   }
