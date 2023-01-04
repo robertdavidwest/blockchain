@@ -6,7 +6,6 @@ const {
 } = require("./consoleDisplay");
 const { strPreview } = require("./helpers");
 const { Network, createMinerProcess } = require("./network");
-const { getBlockHash } = require("./miner");
 
 function printFooter() {
   console.log("");
@@ -98,7 +97,7 @@ const main = async function () {
       intervalIds.forEach((x) => clearInterval(x));
       console.log("Finished. Final Blockchain:");
       network.blockchain = network.blockchain.map((x) => {
-        x.blockHash = getBlockHash(x);
+        x.blockHash = network.getBlockHash(x);
         return x;
       });
       console.dir(network.blockchain);
