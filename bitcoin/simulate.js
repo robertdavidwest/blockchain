@@ -26,6 +26,13 @@ function displayInitial(network, wallet1, wallet2) {
   displayWalletInfo(network, wallet2);
 }
 
+function displayMinerBalances(network) {
+  network.miners.forEach((m, i) => {
+    const balance = network.getWalletBalance(m.wallet);
+    console.log(`Miner ${i} balance: ${balance}`);
+  });
+}
+
 function displayBlockchainInfo(network, wallet1, wallet2) {
   console.log("#---------------------------------------------------------");
   console.log("#---------------------------------------------------------");
@@ -34,6 +41,7 @@ function displayBlockchainInfo(network, wallet1, wallet2) {
   displayBlockChain(network);
   displayBalance(network, wallet1);
   displayBalance(network, wallet2);
+  displayMinerBalances(network);
   console.log("");
 }
 
@@ -62,7 +70,7 @@ async function sendIfBalance(network, wallet, toAddress, amount) {
 const main = async function () {
   const secondsPerDisplay = 0;
   const secondsPerMine = 1;
-  const numMiners = 2;
+  const numMiners = 4;
 
   const network = new Network(numMiners, secondsPerMine);
   const myWallet = network.createWallet("Robert");
