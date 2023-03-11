@@ -4,6 +4,8 @@ To help me to remember the details of how block chains work I am simulating some
 
 The directory `bitcoin` aims to simulate concepts from the Bitcoin blockchain such as `Wallet`s, `Transaction`s, the Transaction Pool and the Blockchain itself. A simulation of events is then run in the script `bitcoin/simulate.js`. I hope to increase the complexity overtime of the simulation to make it a more accurate representation of the actual blockchain technology.
 
+![app-screenshot](app-screenshot.png)
+
 ## Concepts Modelled:
 
 Core concepts included so far are:
@@ -73,6 +75,8 @@ Presently the app is running in Node JS with a simple terminal stdout display. I
 - Tx fees/Gas
 
 - Miners should validate blocks produced by other miners and add to their copy of the blockchain or reject if invalid. DONE
+
+- Mining Strategy - empty blocks. Empty blocks are valid on the blockchain network. So if a miner doesnt have txs to process it could be submitting empty blocks. This still increases security of the network so it does provide a function (in reality this is done during the period that a miner is scrutinising their tx pool for complete transactions from an incoming block)
 
 ### FRONT END:
 
