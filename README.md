@@ -2,7 +2,7 @@
 
 To help me to remember the details of how block chains work I am simulating some core concepts.
 
-The directory `bitcoin` aims to simulate concepts from the Bitcoin blockchain such as `Wallet`s, `Transaction`s, the Transaction Pool and the Blockchain itself. A simulation of events is then run in the script `bitcoin/simulate.js`. I hope to increase the complexity overtime of the simulation to make it a more accurate representation of the actual blockchain technology.
+The directory `bitcoin` aims to simulate concepts from the Bitcoin blockchain such as `Wallet`s, `Transaction`s, the Transaction Pool and the Blockchain itself. A simulation of events is then run in the script `bitcoin/simulate.js`. I hope to increase the complexity over time of the simulation to make it a more accurate representation of the actual blockchain technology.
 
 ![app-screenshot](app-screenshot.png)
 
